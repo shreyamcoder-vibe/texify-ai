@@ -14,7 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          credits_reset_at: string
+          daily_credits_used: number
+          email: string | null
+          full_name: string | null
+          id: string
+          is_pro: boolean
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          credits_reset_at?: string
+          daily_credits_used?: number
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_pro?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          credits_reset_at?: string
+          daily_credits_used?: number
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_pro?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rewrite_history: {
+        Row: {
+          alternatives: string[] | null
+          created_at: string
+          id: string
+          original_text: string
+          rewritten_text: string
+          target_language: string
+          tone: string
+          user_id: string
+        }
+        Insert: {
+          alternatives?: string[] | null
+          created_at?: string
+          id?: string
+          original_text: string
+          rewritten_text: string
+          target_language: string
+          tone: string
+          user_id: string
+        }
+        Update: {
+          alternatives?: string[] | null
+          created_at?: string
+          id?: string
+          original_text?: string
+          rewritten_text?: string
+          target_language?: string
+          tone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
