@@ -5,6 +5,12 @@ import { ArrowRight } from "lucide-react";
 
 const examples = [
   {
+    tone: "Polite",
+    emoji: "🙏",
+    original: "You're wrong about this. That's not how it works.",
+    rewritten: "I appreciate your perspective, though I see things a bit differently. Perhaps we could discuss this further to find common ground? I'd love to understand your viewpoint better.",
+  },
+  {
     tone: "Professional",
     emoji: "💼",
     original: "Hey, I can't make it to the meeting tomorrow, something came up.",
@@ -22,12 +28,6 @@ const examples = [
     original: "You keep saying you'll help but you never do.",
     rewritten: "Your promises have more gaps than a Swiss cheese factory. But hey, at least you're consistent—consistently absent when it matters. 🔥",
   },
-  {
-    tone: "Polite",
-    emoji: "🙏",
-    original: "You're wrong about this. That's not how it works.",
-    rewritten: "I appreciate your perspective, though I see things a bit differently. Perhaps we could discuss this further to find common ground? I'd love to understand your viewpoint better.",
-  },
 ];
 
 export function Examples() {
@@ -44,12 +44,12 @@ export function Examples() {
             See the <span className="gradient-text">magic</span> in action
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Watch how ToneShift AI transforms everyday messages into perfectly crafted communication.
+            Watch how Texify AI transforms everyday messages into perfectly crafted communication.
           </p>
         </div>
 
         {/* Tone Selector */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
           {examples.map((example, index) => (
             <button
               key={example.tone}
@@ -64,6 +64,11 @@ export function Examples() {
             </button>
           ))}
         </div>
+
+        {/* More styles text */}
+        <p className="text-center text-sm text-muted-foreground mb-12">
+          And many more styles inside the app…
+        </p>
 
         {/* Example Cards */}
         <div className="max-w-4xl mx-auto">

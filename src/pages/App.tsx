@@ -15,7 +15,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TONES, LANGUAGES, FREE_DAILY_LIMIT } from "@/lib/constants";
+import { TONES, LANGUAGES, FREE_DAILY_LIMIT, FREE_TONES, FREE_LANGUAGES } from "@/lib/constants";
 import { 
   Sparkles, 
   Copy, 
@@ -23,7 +23,8 @@ import {
   Loader2, 
   Crown,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from "lucide-react";
 
 interface RewriteResult {
@@ -45,12 +46,43 @@ export default function AppPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<string>("");
+
+  const isPro = profile?.is_pro ?? false;
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+
+  const isToneLocked = (toneValue: string) => {
+    if (isPro) return false;
+    return !FREE_TONES.includes(toneValue);
+  };
+
+  const isLanguageLocked = (langValue: string) => {
+    if (isPro) return false;
+    return !FREE_LANGUAGES.includes(langValue);
+  };
+
+  const handleToneChange = (value: string) => {
+    if (isToneLocked(value)) {
+      setUpgradeReason("premium tone styles");
+      setShowUpgrade(true);
+      return;
+    }
+    setSelectedTone(value);
+  };
+
+  const handleLanguageChange = (value: string) => {
+    if (isLanguageLocked(value)) {
+      setUpgradeReason("all languages");
+      setShowUpgrade(true);
+      return;
+    }
+    setSelectedLanguage(value);
+  };
 
   const handleRewrite = async () => {
     if (!inputText.trim()) {
@@ -59,6 +91,19 @@ export default function AppPage() {
         title: "Please enter some text",
         description: "Paste or type the message you want to rewrite.",
       });
+      return;
+    }
+
+    // Check if user is trying to use locked features
+    if (isToneLocked(selectedTone)) {
+      setUpgradeReason("premium tone styles");
+      setShowUpgrade(true);
+      return;
+    }
+
+    if (isLanguageLocked(selectedLanguage)) {
+      setUpgradeReason("all languages");
+      setShowUpgrade(true);
       return;
     }
 
@@ -80,12 +125,16 @@ export default function AppPage() {
 
       if (data.error) {
         if (data.requiresUpgrade) {
+          setUpgradeReason("unlimited rewrites");
           setShowUpgrade(true);
           toast({
             variant: "destructive",
             title: "Daily limit reached",
             description: "Upgrade to Pro for unlimited rewrites!",
           });
+        } else if (data.lockedFeature) {
+          setUpgradeReason(data.lockedFeature);
+          setShowUpgrade(true);
         } else {
           toast({
             variant: "destructive",
@@ -122,7 +171,7 @@ export default function AppPage() {
 
   const selectedToneData = TONES.find(t => t.value === selectedTone);
   const creditsRemaining = profile 
-    ? FREE_DAILY_LIMIT - (profile.daily_credits_used ?? 0)
+    ? Math.max(0, FREE_DAILY_LIMIT - (profile.daily_credits_used ?? 0))
     : FREE_DAILY_LIMIT;
 
   if (authLoading) {
@@ -150,12 +199,12 @@ export default function AppPage() {
           </div>
 
           {/* Credits Display */}
-          {!profile?.is_pro && (
+          {!isPro && (
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass">
                 <span className="text-sm text-muted-foreground">Daily Credits:</span>
                 <div className="flex items-center gap-1">
-                  <span className={`font-bold ${creditsRemaining <= 3 ? 'text-destructive' : 'text-foreground'}`}>
+                  <span className={`font-bold ${creditsRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
                     {creditsRemaining}
                   </span>
                   <span className="text-muted-foreground">/ {FREE_DAILY_LIMIT}</span>
@@ -183,19 +232,27 @@ export default function AppPage() {
                 {/* Tone Selector */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tone / Style</label>
-                  <Select value={selectedTone} onValueChange={setSelectedTone}>
+                  <Select value={selectedTone} onValueChange={handleToneChange}>
                     <SelectTrigger className="bg-background/50">
                       <SelectValue placeholder="Select tone" />
                     </SelectTrigger>
                     <SelectContent className="glass max-h-[300px]">
-                      {TONES.map((tone) => (
-                        <SelectItem key={tone.value} value={tone.value}>
-                          <div className="flex items-center gap-2">
-                            <span>{tone.emoji}</span>
-                            <span>{tone.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {TONES.map((tone) => {
+                        const locked = isToneLocked(tone.value);
+                        return (
+                          <SelectItem 
+                            key={tone.value} 
+                            value={tone.value}
+                            className={locked ? "opacity-70" : ""}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <span>{tone.emoji}</span>
+                              <span>{tone.label}</span>
+                              {locked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   {selectedToneData && (
@@ -208,16 +265,26 @@ export default function AppPage() {
                 {/* Language Selector */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Output Language</label>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
                     <SelectTrigger className="bg-background/50">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent className="glass max-h-[300px]">
-                      {LANGUAGES.map((lang) => (
-                        <SelectItem key={lang.value} value={lang.value}>
-                          {lang.label}
-                        </SelectItem>
-                      ))}
+                      {LANGUAGES.map((lang) => {
+                        const locked = isLanguageLocked(lang.value);
+                        return (
+                          <SelectItem 
+                            key={lang.value} 
+                            value={lang.value}
+                            className={locked ? "opacity-70" : ""}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <span>{lang.label}</span>
+                              {locked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -327,10 +394,35 @@ export default function AppPage() {
                   <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
                     <Crown className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">Daily Limit Reached</h2>
+                  <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
                   <p className="text-muted-foreground mb-6">
-                    You've used all 10 free rewrites for today. Upgrade to Pro for unlimited access!
+                    {upgradeReason === "unlimited rewrites" 
+                      ? `You've used all ${FREE_DAILY_LIMIT} free rewrites for today. Upgrade to Pro for unlimited access!`
+                      : `Unlock ${upgradeReason} and more with Texify AI Pro!`
+                    }
                   </p>
+                  <div className="space-y-2 text-left mb-6 bg-muted/30 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>Unlimited rewrites</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>All 14+ tone styles including Rizz, Savage, Sarcastic</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>All 20+ languages</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>Faster responses & priority processing</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>Rewrite history</span>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     <Button variant="hero" className="w-full" asChild>
                       <Link to="/pricing">
@@ -342,9 +434,11 @@ export default function AppPage() {
                       Maybe Later
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Your credits reset in 24 hours
-                  </p>
+                  {upgradeReason === "unlimited rewrites" && (
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Your credits reset in 24 hours
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>

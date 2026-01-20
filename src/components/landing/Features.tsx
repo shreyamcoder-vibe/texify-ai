@@ -1,44 +1,44 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Globe, 
-  Zap, 
-  Sparkles, 
-  MessageSquare, 
+  RefreshCw, 
+  Wand2, 
+  Palette, 
   Languages, 
-  Shield 
+  Sparkles, 
+  Eye 
 } from "lucide-react";
 
 const features = [
   {
-    icon: Sparkles,
-    title: "14+ Tone Styles",
+    icon: RefreshCw,
+    title: "Rewrite",
+    description: "Transform any message completely while keeping the original meaning intact.",
+  },
+  {
+    icon: Wand2,
+    title: "Refine",
+    description: "Polish and improve your text to make it cleaner, clearer, and more impactful.",
+  },
+  {
+    icon: Palette,
+    title: "Change Tone",
     description: "From professional to savage, polite to flirty. Find the perfect voice for every situation.",
   },
   {
     icon: Languages,
-    title: "20+ Languages",
-    description: "Write in English, get output in Spanish. Or Hindi. Or Japanese. Any language works.",
+    title: "Change Language",
+    description: "Write in English, get output in Spanish, Hindi, or any of 20+ languages.",
   },
   {
-    icon: Zap,
-    title: "Instant Results",
-    description: "Get 3 variations in seconds. AI-powered rewrites that feel completely human.",
+    icon: Sparkles,
+    title: "Polish Messages",
+    description: "Fix grammar, enhance vocabulary, and make your messages sound more natural.",
   },
   {
-    icon: MessageSquare,
-    title: "Context-Aware",
-    description: "Our AI understands emotional nuance and cultural context for natural-sounding results.",
-  },
-  {
-    icon: Globe,
-    title: "Works Anywhere",
-    description: "Perfect for emails, texts, DMs, comments, or any written communication.",
-  },
-  {
-    icon: Shield,
-    title: "Privacy First",
-    description: "Your messages are processed securely and never stored or shared.",
+    icon: Eye,
+    title: "Improve Clarity",
+    description: "Make your communication crystal clear so your message is understood perfectly.",
   },
 ];
 
@@ -52,7 +52,7 @@ export function Features() {
             Everything you need to <span className="gradient-text">communicate better</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            ToneShift AI is designed to make every message hit exactly right.
+            The easiest way to fix, polish, and upgrade your messages.
           </p>
         </div>
 

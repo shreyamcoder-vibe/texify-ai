@@ -6,25 +6,25 @@ const steps = [
     icon: MessageSquare,
     number: "01",
     title: "Paste your message",
-    description: "Drop in any text you want to rewrite. Works with any language.",
+    description: "Drop in any text you want to rewrite, refine, or transform.",
   },
   {
     icon: Sliders,
     number: "02",
-    title: "Choose your tone",
-    description: "Select from 14+ styles like Professional, Flirty, Savage, or Polite.",
+    title: "Choose your style",
+    description: "Select from 14+ tones like Professional, Polite, Rizz, or Savage.",
   },
   {
     icon: Sparkles,
     number: "03",
     title: "Click rewrite",
-    description: "Our AI analyzes and transforms your message in seconds.",
+    description: "Our AI refines and transforms your message in seconds.",
   },
   {
     icon: Copy,
     number: "04",
     title: "Copy & use",
-    description: "Get 3 variations. Pick your favorite and send it!",
+    description: "Get 3 polished variations. Pick your favorite and send!",
   },
 ];
 
@@ -40,7 +40,7 @@ export function HowItWorks() {
             Four steps to <span className="gradient-text">perfect communication</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Transform your messages in seconds. No learning curve required.
+            Rewrite, refine, and perfect your messages in seconds. No learning curve required.
           </p>
         </div>
 

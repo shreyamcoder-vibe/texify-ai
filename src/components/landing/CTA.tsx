@@ -19,8 +19,8 @@ export function CTA() {
           </h2>
           
           <p className="text-lg text-primary-foreground/80 mb-10">
-            Join thousands of people who use ToneShift AI to communicate better, 
-            every single day. Start with 10 free rewrites.
+            Join thousands of people who use Texify AI to rewrite, refine, and 
+            perfect their messages every single day. Start with 5 free rewrites.
           </p>
           
           <Button 

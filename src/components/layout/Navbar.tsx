@@ -35,7 +35,7 @@ export function Navbar() {
               <Sparkles className="h-7 w-7 text-primary transition-transform duration-300 group-hover:rotate-12" />
               <div className="absolute inset-0 blur-lg bg-primary/30 animate-pulse-slow" />
             </div>
-            <span className="text-xl font-bold gradient-text">ToneShift AI</span>
+            <span className="text-xl font-bold gradient-text">Texify AI</span>
           </Link>
 
           {/* Navigation */}

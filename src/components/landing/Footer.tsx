@@ -9,7 +9,7 @@ export function Footer() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">ToneShift AI</span>
+            <span className="text-lg font-bold">Texify AI</span>
           </Link>
           
           {/* Links */}
@@ -27,7 +27,7 @@ export function Footer() {
           
           {/* Copyright */}
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ToneShift AI. All rights reserved.
+            © {new Date().getFullYear()} Texify AI. All rights reserved.
           </p>
         </div>
       </div>
