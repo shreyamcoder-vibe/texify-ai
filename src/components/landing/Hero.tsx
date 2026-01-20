@@ -20,17 +20,15 @@ export function Hero() {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up">
-            Rewrite anything.
+            Transform your text.
             <br />
-            <span className="gradient-text">In any tone.</span>
-            <br />
-            In any language.
+            <span className="gradient-text">Perfect every message.</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Transform your messages instantly with AI. Sound more professional, 
-            polite, confident, or even savage—whatever the situation calls for.
+            Rewrite, refine, and reshape any message in any language. 
+            Sound professional, polite, confident, persuasive, or bold — instantly.
           </p>
 
           {/* CTA Buttons */}
@@ -38,7 +36,7 @@ export function Hero() {
             <Button variant="hero" size="xl" asChild className="group">
               <Link to="/app">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Start Rewriting Free
+                Start for Free
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -53,7 +51,7 @@ export function Hero() {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span>10 free rewrites/day</span>
+              <span>5 free rewrites/day</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -64,13 +62,6 @@ export function Hero() {
               <span>20+ languages</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float">
-        <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2">
-          <div className="w-1 h-2 rounded-full bg-muted-foreground/50 animate-pulse" />
         </div>
       </div>
     </section>

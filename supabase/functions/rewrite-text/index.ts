@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are ToneShift AI, an expert human communication editor. Your job is to rewrite user messages while preserving the original meaning, but changing tone, style, emotional impact, clarity, and social intelligence. Never change the core intent. Never add new facts. Adapt culturally to the target language. If the user selects Sarcastic or Flirty, make it natural and human, not cringe. If Professional, make it sound like a high-level corporate communicator. If Polite, remove harshness. If Savage, keep it clever and non-abusive. Always output in the target language. First analyze the emotional tone internally, then adapt.
+const SYSTEM_PROMPT = `You are Texify AI, an expert human communication editor. Your job is to rewrite user messages while preserving the original meaning, but changing tone, style, emotional impact, clarity, and social intelligence. Never change the core intent. Never add new facts. Adapt culturally to the target language. If the user selects Sarcastic or Flirty, make it natural and human, not cringe. If Professional, make it sound like a high-level corporate communicator. If Polite, remove harshness. If Savage, keep it clever and non-abusive. Always output in the target language. First analyze the emotional tone internally, then adapt.
 
 IMPORTANT: You must respond ONLY with valid JSON in this exact format, no other text:
 {
@@ -16,6 +16,11 @@ IMPORTANT: You must respond ONLY with valid JSON in this exact format, no other 
 }
 
 Never explain, never add commentary. Only output the JSON object.`;
+
+// Free tier limits
+const FREE_DAILY_LIMIT = 5;
+const FREE_TONES = ["polite", "professional", "friendly"];
+const FREE_LANGUAGES = ["auto", "en", "hi", "bn"];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -56,6 +61,8 @@ serve(async (req) => {
       );
     }
 
+    const isPro = profile?.is_pro ?? false;
+
     // Check if credits need to be reset (new day)
     const now = new Date();
     const resetAt = profile?.credits_reset_at ? new Date(profile.credits_reset_at) : new Date(0);
@@ -72,9 +79,6 @@ serve(async (req) => {
     }
 
     // Check credit limit for non-pro users
-    const isPro = profile?.is_pro ?? false;
-    const FREE_DAILY_LIMIT = 10;
-    
     if (!isPro && currentCreditsUsed >= FREE_DAILY_LIMIT) {
       return new Response(
         JSON.stringify({ 
@@ -94,6 +98,31 @@ serve(async (req) => {
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Check if free user is trying to use premium features
+    if (!isPro) {
+      if (!FREE_TONES.includes(tone)) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Premium tone required",
+            lockedFeature: "premium tone styles",
+            requiresUpgrade: true
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!FREE_LANGUAGES.includes(targetLanguage)) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Premium language required",
+            lockedFeature: "all languages",
+            requiresUpgrade: true
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const userPrompt = `Input message: ${text}
@@ -179,17 +208,19 @@ Target output language: ${targetLanguage}`;
       .update({ daily_credits_used: currentCreditsUsed + 1 })
       .eq("user_id", user.id);
 
-    // Save to history
-    await supabaseClient
-      .from("rewrite_history")
-      .insert({
-        user_id: user.id,
-        original_text: text,
-        tone,
-        target_language: targetLanguage,
-        rewritten_text: parsedContent.main,
-        alternatives: [parsedContent.alternative1, parsedContent.alternative2]
-      });
+    // Save to history (only for pro users)
+    if (isPro) {
+      await supabaseClient
+        .from("rewrite_history")
+        .insert({
+          user_id: user.id,
+          original_text: text,
+          tone,
+          target_language: targetLanguage,
+          rewritten_text: parsedContent.main,
+          alternatives: [parsedContent.alternative1, parsedContent.alternative2]
+        });
+    }
 
     return new Response(
       JSON.stringify({

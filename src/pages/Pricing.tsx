@@ -6,15 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { Check, Crown, Zap, Sparkles } from "lucide-react";
+import { Check, X, Crown, Zap, Sparkles, Lock } from "lucide-react";
 
-const features = [
-  "Unlimited rewrites",
-  "All 14+ tone styles",
-  "20+ languages",
-  "Faster AI responses",
-  "Priority support",
-  "No daily limits",
+const freeFeatures = [
+  { text: "5 rewrites per day", included: true },
+  { text: "3 tone styles (Polite, Professional, Friendly)", included: true },
+  { text: "3 languages (English, Hindi, Bengali)", included: true },
+  { text: "Standard processing", included: true },
+  { text: "Premium tones (Rizz, Savage, Sarcastic...)", included: false },
+  { text: "All 20+ languages", included: false },
+  { text: "Rewrite history", included: false },
+  { text: "Priority processing", included: false },
+];
+
+const proFeatures = [
+  { text: "Unlimited rewrites", included: true },
+  { text: "All 14+ tone styles", included: true },
+  { text: "All 20+ languages", included: true },
+  { text: "Faster AI responses", included: true },
+  { text: "Rewrite history", included: true },
+  { text: "Priority processing", included: true },
 ];
 
 export default function PricingPage() {
@@ -42,10 +53,10 @@ export default function PricingPage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">Pricing</Badge>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
-              Upgrade to <span className="gradient-text">Pro</span>
+              Simple, transparent <span className="gradient-text">pricing</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Unlock unlimited rewrites and take your communication to the next level.
+              Start free, upgrade when you need more. No hidden fees, cancel anytime.
             </p>
           </div>
 
@@ -59,7 +70,7 @@ export default function PricingPage() {
                     <CardTitle className="text-2xl">Free</CardTitle>
                     <Zap className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <CardDescription>Perfect for trying out ToneShift AI</CardDescription>
+                  <CardDescription>Perfect for trying out Texify AI</CardDescription>
                   <div className="mt-4">
                     <span className="text-4xl font-bold">$0</span>
                     <span className="text-muted-foreground">/forever</span>
@@ -67,22 +78,17 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    <li className="flex items-center gap-3">
-                      <Check className="h-5 w-5 text-primary" />
-                      <span>10 rewrites per day</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Check className="h-5 w-5 text-primary" />
-                      <span>All 14+ tone styles</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Check className="h-5 w-5 text-primary" />
-                      <span>20+ languages</span>
-                    </li>
-                    <li className="flex items-center gap-3 text-muted-foreground">
-                      <Check className="h-5 w-5 opacity-50" />
-                      <span>Standard processing</span>
-                    </li>
+                    {freeFeatures.map((feature) => (
+                      <li key={feature.text} className={`flex items-center gap-3 ${!feature.included ? "text-muted-foreground" : ""}`}>
+                        {feature.included ? (
+                          <Check className="h-5 w-5 text-primary shrink-0" />
+                        ) : (
+                          <X className="h-5 w-5 opacity-30 shrink-0" />
+                        )}
+                        <span className={!feature.included ? "line-through opacity-60" : ""}>{feature.text}</span>
+                        {!feature.included && <Lock className="h-3 w-3 ml-auto opacity-30" />}
+                      </li>
+                    ))}
                   </ul>
                   <Button variant="outline" className="w-full mt-6" asChild>
                     <Link to="/app">Get Started Free</Link>
@@ -115,10 +121,10 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-3">
-                        <Check className="h-5 w-5 text-primary" />
-                        <span>{feature}</span>
+                    {proFeatures.map((feature) => (
+                      <li key={feature.text} className="flex items-center gap-3">
+                        <Check className="h-5 w-5 text-primary shrink-0" />
+                        <span>{feature.text}</span>
                       </li>
                     ))}
                   </ul>
@@ -147,6 +153,10 @@ export default function PricingPage() {
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">What happens when I hit my daily limit?</h3>
                 <p className="text-muted-foreground">You'll see a friendly upgrade screen. Your credits reset every 24 hours, so you can wait or upgrade to Pro for unlimited access.</p>
+              </div>
+              <div className="glass rounded-xl p-6">
+                <h3 className="font-semibold mb-2">What's included in the free plan?</h3>
+                <p className="text-muted-foreground">Free users get 5 rewrites per day, access to 3 tone styles (Polite, Professional, Friendly), and 3 languages (English, Hindi, Bengali).</p>
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>

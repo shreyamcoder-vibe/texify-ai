@@ -92,7 +92,7 @@ export default function AuthPage() {
     } else {
       toast({
         title: "Account created!",
-        description: "Welcome to ToneShift AI. Let's get started!",
+        description: "Welcome to Texify AI. Let's get started!",
       });
       navigate("/app");
     }
@@ -119,7 +119,7 @@ export default function AuthPage() {
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2 mb-4">
               <Sparkles className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold gradient-text">ToneShift AI</span>
+              <span className="text-2xl font-bold gradient-text">Texify AI</span>
             </Link>
             <p className="text-muted-foreground">Transform your communication</p>
           </div>
