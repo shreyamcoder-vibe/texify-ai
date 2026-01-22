@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,18 +29,8 @@ const proFeatures = [
 
 export default function PricingPage() {
   const { profile } = useAuth();
-  const [currency] = useState(() => {
-    // Simple geo-detection based on timezone
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz.includes("Kolkata") || tz.includes("Asia/Calcutta")) {
-      return "inr";
-    }
-    return "usd";
-  });
 
-  const pricing = currency === "inr" 
-    ? { amount: 99, symbol: "₹", period: "month" }
-    : { amount: 3.99, symbol: "$", period: "month" };
+  const pricing = { amount: 3.99, symbol: "$", period: "month" };
 
   return (
     <div className="min-h-screen gradient-subtle">

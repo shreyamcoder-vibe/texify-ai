@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,11 +50,8 @@ export default function AppPage() {
 
   const isPro = profile?.is_pro ?? false;
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
+  // Allow non-authenticated users to use the app (they can try it)
+  // but show login prompt when they try to rewrite
 
   const isToneLocked = (toneValue: string) => {
     if (isPro) return false;
@@ -91,6 +88,16 @@ export default function AppPage() {
         title: "Please enter some text",
         description: "Paste or type the message you want to rewrite.",
       });
+      return;
+    }
+
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please sign in to rewrite messages.",
+      });
+      navigate("/auth");
       return;
     }
 

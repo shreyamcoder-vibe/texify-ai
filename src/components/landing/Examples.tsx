@@ -82,18 +82,12 @@ export function Examples() {
               <p className="text-lg leading-relaxed">{examples[activeIndex].original}</p>
             </Card>
 
-            {/* Arrow */}
-            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-lg">
-                <ArrowRight className="h-6 w-6 text-primary-foreground" />
-              </div>
-            </div>
-
             {/* Rewritten */}
             <Card className="p-6 glass-strong border-primary/20 animate-scale-in" key={`rewritten-${activeIndex}`} style={{ animationDelay: "0.1s" }}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-3 h-3 rounded-full gradient-primary" />
                 <span className="text-sm font-medium text-primary">{examples[activeIndex].tone}</span>
+                <ArrowRight className="h-4 w-4 text-primary ml-auto" />
               </div>
               <p className="text-lg leading-relaxed">{examples[activeIndex].rewritten}</p>
             </Card>
