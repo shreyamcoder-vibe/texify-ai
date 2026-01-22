@@ -40,6 +40,13 @@ export function Navbar() {
 
           {/* Navigation */}
           <div className="flex items-center gap-4">
+            {/* Common Nav Links */}
+            <div className="hidden sm:flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/pricing">Pricing</Link>
+              </Button>
+            </div>
+
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
@@ -97,7 +104,7 @@ export function Navbar() {
                   <Link to="/auth">Login</Link>
                 </Button>
                 <Button variant="hero" asChild>
-                  <Link to="/auth?mode=signup">Get Started</Link>
+                  <Link to="/app">Get Started</Link>
                 </Button>
               </div>
             )}
