@@ -64,7 +64,7 @@ export default function PricingPage() {
                   <CardDescription>Perfect for trying out Texify AI</CardDescription>
                   <div className="mt-4">
                     <span className="text-4xl font-bold">$0</span>
-                    <span className="text-muted-foreground">/forever</span>
+                    <p className="text-sm text-muted-foreground mt-1">Free forever</p>
                   </div>
                 </CardHeader>
                 <CardContent>
