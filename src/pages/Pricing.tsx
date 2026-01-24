@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,8 @@ const proFeatures = [
 ];
 
 export default function PricingPage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const [showComingSoon, setShowComingSoon] = useState(false);
 
   const pricing = { amount: 3.99, symbol: "$", period: "month" };
 
@@ -117,7 +119,12 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button variant="hero" className="w-full mt-6" disabled={profile?.is_pro}>
+                  <Button 
+                    variant="hero" 
+                    className="w-full mt-6" 
+                    disabled={profile?.is_pro}
+                    onClick={() => !profile?.is_pro && setShowComingSoon(true)}
+                  >
                     {profile?.is_pro ? (
                       <>
                         <Crown className="h-4 w-4 mr-2" />
@@ -134,6 +141,26 @@ export default function PricingPage() {
               </Card>
             </div>
           </div>
+
+          {/* Coming Soon Modal */}
+          {showComingSoon && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <Card className="glass-strong max-w-md w-full animate-scale-in">
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
+                    <Crown className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Pro plan coming soon</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Payments are not live yet. You'll be able to upgrade very soon.
+                  </p>
+                  <Button variant="hero" className="w-full" onClick={() => setShowComingSoon(false)}>
+                    Okay
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* FAQ */}
           <div className="max-w-2xl mx-auto mt-20">
