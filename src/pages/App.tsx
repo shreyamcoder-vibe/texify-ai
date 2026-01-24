@@ -430,15 +430,18 @@ export default function AppPage() {
                       <span>Rewrite history</span>
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-4 italic">
+                    ⚡ Payments coming soon.
+                  </p>
                   <div className="space-y-3">
                     <Button variant="hero" className="w-full" asChild>
                       <Link to="/pricing">
-                        Upgrade to Pro
+                        View Pro Details
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Link>
                     </Button>
                     <Button variant="ghost" className="w-full" onClick={() => setShowUpgrade(false)}>
-                      Maybe Later
+                      Okay
                     </Button>
                   </div>
                   {upgradeReason === "unlimited rewrites" && (
