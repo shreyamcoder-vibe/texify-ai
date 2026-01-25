@@ -12,33 +12,33 @@ import {
 const features = [
   {
     icon: RefreshCw,
-    title: "Rewrite",
-    description: "Transform any message completely while keeping the original meaning intact.",
+    title: "Fix Awkward Messages",
+    description: "Paste what you wrote and get a version that sounds natural and confident.",
   },
   {
     icon: Wand2,
-    title: "Refine",
-    description: "Polish and improve your text to make it cleaner, clearer, and more impactful.",
+    title: "Avoid Embarrassment",
+    description: "Catch risky phrasing before you hit send. Say what you mean, the right way.",
   },
   {
     icon: Palette,
-    title: "Change Tone",
-    description: "From professional to savage, polite to flirty. Find the perfect voice for every situation.",
+    title: "Match Any Situation",
+    description: "Reply to your boss, your crush, or a tough conversation — always sound right.",
   },
   {
     icon: Languages,
-    title: "Change Language",
+    title: "Works in Any Language",
     description: "Write in English, get output in Spanish, Hindi, or any of 20+ languages.",
   },
   {
     icon: Sparkles,
-    title: "Polish Messages",
-    description: "Fix grammar, enhance vocabulary, and make your messages sound more natural.",
+    title: "Sound Polished",
+    description: "Fix grammar, enhance vocabulary, and make your messages sound professional.",
   },
   {
     icon: Eye,
-    title: "Improve Clarity",
-    description: "Make your communication crystal clear so your message is understood perfectly.",
+    title: "Get It Right the First Time",
+    description: "No more re-reading, second-guessing, or accidental tone disasters.",
   },
 ];
 
@@ -49,10 +49,10 @@ export function Features() {
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Features</Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            Everything you need to <span className="gradient-text">communicate better</span>
+            Say the right thing, <span className="gradient-text">every time</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The easiest way to fix, polish, and upgrade your messages.
+            Stop overthinking. Start sending with confidence.
           </p>
         </div>
 

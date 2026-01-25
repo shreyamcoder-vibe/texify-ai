@@ -20,15 +20,14 @@ export function Hero() {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up">
-            Transform your text.
+            Fix your message
             <br />
-            <span className="gradient-text">Perfect every message.</span>
+            <span className="gradient-text">before you send it.</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Rewrite, refine, and reshape any message in any language. 
-            Sound professional, polite, confident, persuasive, or bold — instantly.
+            Don't overthink your replies. Paste your message and let Texify rewrite it to sound polite, confident, professional, calm, or charming — in one click.
           </p>
 
           {/* CTA Buttons */}
@@ -36,7 +35,7 @@ export function Hero() {
             <Button variant="hero" size="xl" asChild className="group">
               <Link to="/app">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Start for Free
+                Fix My Message
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>

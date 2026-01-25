@@ -41,11 +41,8 @@ export function Examples() {
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Before & After</Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            See the <span className="gradient-text">magic</span> in action
+            See how Texify <span className="gradient-text">saves you</span> from sending the wrong message
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Watch how Texify AI transforms everyday messages into perfectly crafted communication.
-          </p>
         </div>
 
         {/* Tone Selector */}
@@ -67,7 +64,7 @@ export function Examples() {
 
         {/* More styles text */}
         <p className="text-center text-sm text-muted-foreground mb-12">
-          And many more styles inside the app…
+          And many more inside the app…
         </p>
 
         {/* Example Cards */}

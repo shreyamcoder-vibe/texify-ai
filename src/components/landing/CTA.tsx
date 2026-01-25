@@ -15,12 +15,12 @@ export function CTA() {
           </div>
           
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
-            Ready to transform your communication?
+            Stop sending messages you'll regret
           </h2>
           
           <p className="text-lg text-primary-foreground/80 mb-10">
-            Join thousands of people who use Texify AI to rewrite, refine, and 
-            perfect their messages every single day. Start with 5 free rewrites.
+            Fix awkward, rude, or risky messages before they go out. 
+            Start with 5 free fixes today.
           </p>
           
           <Button 
@@ -29,7 +29,7 @@ export function CTA() {
             className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 group"
           >
             <Link to="/app">
-              Get Started Free
+              Fix My First Message
               <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>

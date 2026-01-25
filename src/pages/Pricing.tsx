@@ -9,22 +9,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { Check, X, Crown, Zap, Sparkles, Lock } from "lucide-react";
 
 const freeFeatures = [
-  { text: "5 rewrites per day", included: true },
+  { text: "5 message fixes per day", included: true },
   { text: "3 tone styles (Polite, Professional, Friendly)", included: true },
   { text: "3 languages (English, Hindi, Bengali)", included: true },
   { text: "Standard processing", included: true },
   { text: "Premium tones (Rizz, Savage, Sarcastic...)", included: false },
   { text: "All 20+ languages", included: false },
-  { text: "Rewrite history", included: false },
+  { text: "Fix history", included: false },
   { text: "Priority processing", included: false },
 ];
 
 const proFeatures = [
-  { text: "Unlimited rewrites", included: true },
+  { text: "Unlimited message fixes", included: true },
   { text: "All 14+ tone styles", included: true },
   { text: "All 20+ languages", included: true },
-  { text: "Faster AI responses", included: true },
-  { text: "Rewrite history", included: true },
+  { text: "Faster responses", included: true },
+  { text: "Fix history", included: true },
   { text: "Priority processing", included: true },
 ];
 
@@ -44,10 +44,10 @@ export default function PricingPage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4">Pricing</Badge>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
-              Simple, transparent <span className="gradient-text">pricing</span>
+              Simple <span className="gradient-text">pricing</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Start free, upgrade when you need more. No hidden fees, cancel anytime.
+              Start free. Upgrade when you need more.
             </p>
           </div>
 
@@ -61,10 +61,8 @@ export default function PricingPage() {
                     <CardTitle className="text-2xl">Free</CardTitle>
                     <Zap className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <CardDescription>Perfect for trying out Texify AI</CardDescription>
                   <div className="mt-4">
                     <span className="text-4xl font-bold">$0</span>
-                    <p className="text-sm text-muted-foreground mt-1">Free forever</p>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -168,19 +166,19 @@ export default function PricingPage() {
             <div className="space-y-6">
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">What happens when I hit my daily limit?</h3>
-                <p className="text-muted-foreground">You'll see a friendly upgrade screen. Your credits reset every 24 hours, so you can wait or upgrade to Pro for unlimited access.</p>
+                <p className="text-muted-foreground">You'll see an upgrade prompt. Your fixes reset every 24 hours, or you can upgrade to Pro for unlimited access.</p>
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">What's included in the free plan?</h3>
-                <p className="text-muted-foreground">Free users get 5 rewrites per day, access to 3 tone styles (Polite, Professional, Friendly), and 3 languages (English, Hindi, Bengali).</p>
+                <p className="text-muted-foreground">5 message fixes per day, 3 tone styles (Polite, Professional, Friendly), and 3 languages (English, Hindi, Bengali).</p>
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
-                <p className="text-muted-foreground">Absolutely! You can cancel your subscription at any time and continue using Pro features until the end of your billing period.</p>
+                <p className="text-muted-foreground">Yes. Cancel your subscription at any time and keep using Pro features until the end of your billing period.</p>
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">Is my data private?</h3>
-                <p className="text-muted-foreground">Yes! We process your messages securely and don't store or share them with third parties. Your privacy is our priority.</p>
+                <p className="text-muted-foreground">Yes. We process your messages securely and don't store or share them with third parties.</p>
               </div>
             </div>
           </div>
