@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Navbar } from "@/components/layout/Navbar";
+import { QuickToneButtons } from "@/components/app/QuickToneButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,10 +199,10 @@ export default function AppPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-              Rewrite your message
+              Fix your message
             </h1>
             <p className="text-muted-foreground">
-              Paste your text, pick a tone, and let AI do the magic.
+              Paste what you're about to send. Pick a tone. Send with confidence.
             </p>
           </div>
 
@@ -209,7 +210,7 @@ export default function AppPage() {
           {!isPro && (
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass">
-                <span className="text-sm text-muted-foreground">Daily Credits:</span>
+                <span className="text-sm text-muted-foreground">Daily Fixes:</span>
                 <div className="flex items-center gap-1">
                   <span className={`font-bold ${creditsRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
                     {creditsRemaining}
@@ -228,11 +229,29 @@ export default function AppPage() {
             <CardContent className="p-6">
               {/* Text Input */}
               <Textarea
-                placeholder="Paste your message here... (works with any language)"
+                placeholder="Paste your message here... What are you about to send?"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 className="min-h-[150px] mb-4 resize-none bg-background/50 border-border/50 focus:border-primary/50"
               />
+
+              {/* Quick Tone Buttons */}
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Quick Fix</label>
+                <QuickToneButtons 
+                  onSelectTone={(tone) => {
+                    setSelectedTone(tone);
+                    if (!isToneLocked(tone) && inputText.trim()) {
+                      handleRewrite();
+                    } else if (isToneLocked(tone)) {
+                      setUpgradeReason("premium tone styles");
+                      setShowUpgrade(true);
+                    }
+                  }}
+                  isToneLocked={isToneLocked}
+                  disabled={isLoading || !inputText.trim()}
+                />
+              </div>
 
               {/* Controls */}
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
@@ -297,7 +316,7 @@ export default function AppPage() {
                 </div>
               </div>
 
-              {/* Rewrite Button */}
+              {/* Fix Button */}
               <Button 
                 variant="hero" 
                 size="lg" 
@@ -308,12 +327,12 @@ export default function AppPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    Rewriting...
+                    Fixing...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5 mr-2" />
-                    Rewrite
+                    Fix my message
                   </>
                 )}
               </Button>
@@ -329,7 +348,7 @@ export default function AppPage() {
                   <div className="flex items-center justify-between mb-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                       <Sparkles className="h-3 w-3 mr-1" />
-                      Main Version
+                      Here's a better way to say it
                     </Badge>
                     <Button
                       variant="ghost"
@@ -356,7 +375,7 @@ export default function AppPage() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="text-xs">
-                          Alternative {index + 1}
+                          Option {index + 2}
                         </Badge>
                         <Button
                           variant="ghost"
@@ -387,7 +406,7 @@ export default function AppPage() {
                   }}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Start Over
+                  Fix another message
                 </Button>
               </div>
             </div>
@@ -404,14 +423,14 @@ export default function AppPage() {
                   <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
                   <p className="text-muted-foreground mb-6">
                     {upgradeReason === "unlimited rewrites" 
-                      ? `You've used all ${FREE_DAILY_LIMIT} free rewrites for today. Upgrade to Pro for unlimited access!`
-                      : `Unlock ${upgradeReason} and more with Texify AI Pro!`
+                      ? `You've used all ${FREE_DAILY_LIMIT} free fixes for today. Upgrade to Pro for unlimited access!`
+                      : `Unlock ${upgradeReason} and more with Texify Pro!`
                     }
                   </p>
                   <div className="space-y-2 text-left mb-6 bg-muted/30 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      <span>Unlimited rewrites</span>
+                      <span>Unlimited message fixes</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
@@ -427,7 +446,7 @@ export default function AppPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      <span>Rewrite history</span>
+                      <span>Fix history</span>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4 italic">
@@ -446,7 +465,7 @@ export default function AppPage() {
                   </div>
                   {upgradeReason === "unlimited rewrites" && (
                     <p className="text-xs text-muted-foreground mt-4">
-                      Your credits reset in 24 hours
+                      Your fixes reset in 24 hours
                     </p>
                   )}
                 </CardContent>

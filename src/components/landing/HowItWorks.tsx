@@ -6,25 +6,25 @@ const steps = [
     icon: MessageSquare,
     number: "01",
     title: "Paste your message",
-    description: "Drop in any text you want to rewrite, refine, or transform.",
+    description: "Drop in what you're about to send — any message, any language.",
   },
   {
     icon: Sliders,
     number: "02",
-    title: "Choose your style",
-    description: "Select from 14+ tones like Professional, Polite, Rizz, or Savage.",
+    title: "Pick a tone",
+    description: "Polite, professional, confident, flirty, savage — you choose.",
   },
   {
     icon: Sparkles,
     number: "03",
-    title: "Click rewrite",
-    description: "Our AI refines and transforms your message in seconds.",
+    title: "Fix it instantly",
+    description: "Texify rewrites your message so it sounds exactly right.",
   },
   {
     icon: Copy,
     number: "04",
-    title: "Copy & use",
-    description: "Get 3 polished variations. Pick your favorite and send!",
+    title: "Copy & send",
+    description: "Get 3 versions. Pick the best one and send with confidence.",
   },
 ];
 
@@ -37,10 +37,10 @@ export function HowItWorks() {
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">How It Works</Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            Four steps to <span className="gradient-text">perfect communication</span>
+            Fix any message in <span className="gradient-text">4 simple steps</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Rewrite, refine, and perfect your messages in seconds. No learning curve required.
+            No learning curve. Just paste, pick a tone, and send.
           </p>
         </div>
 
