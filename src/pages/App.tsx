@@ -427,7 +427,7 @@ export default function AppPage() {
                           >
                             {copiedIndex === index + 1 ? (
                               <>
-                                <Check className="h-3 w-3 mr-1 text-green-500" />
+                                <Check className="h-3 w-3 mr-1 text-primary" />
                                 <span className="text-xs">Copied!</span>
                               </>
                             ) : (
