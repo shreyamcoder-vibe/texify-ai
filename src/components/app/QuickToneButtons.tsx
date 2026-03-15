@@ -27,12 +27,21 @@ export function QuickToneButtons({ onSelectTone, isToneLocked, disabled }: Quick
             variant="outline"
             size="sm"
             onClick={() => onSelectTone(tone.value)}
-            disabled={disabled}
-            className="text-xs h-8 px-3 bg-background/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
+            disabled={disabled && !locked}
+            className={`text-xs h-8 px-3 transition-all ${
+              locked 
+                ? "bg-muted/50 border-border/50 opacity-70 cursor-pointer hover:bg-muted" 
+                : "bg-background/50 hover:bg-primary/10 hover:border-primary/50"
+            }`}
           >
             <span className="mr-1.5">{tone.emoji}</span>
             {tone.label}
-            {locked && <Lock className="h-3 w-3 ml-1.5 opacity-50" />}
+            {locked && (
+              <span className="flex items-center gap-0.5 ml-1.5 text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                <span className="text-[10px]">Pro</span>
+              </span>
+            )}
           </Button>
         );
       })}

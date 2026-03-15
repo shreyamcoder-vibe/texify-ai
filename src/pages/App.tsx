@@ -24,8 +24,10 @@ import {
   Loader2, 
   Crown,
   ArrowRight,
+  ArrowDown,
   RefreshCw,
-  Lock
+  Lock,
+  Clock
 } from "lucide-react";
 
 interface RewriteResult {
@@ -47,12 +49,12 @@ export default function AppPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showLimitReached, setShowLimitReached] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<string>("");
 
   const isPro = profile?.is_pro ?? false;
-
-  // Allow non-authenticated users to use the app (they can try it)
-  // but show login prompt when they try to rewrite
+  const creditsUsed = profile?.daily_credits_used ?? 0;
+  const creditsRemaining = Math.max(0, FREE_DAILY_LIMIT - creditsUsed);
 
   const isToneLocked = (toneValue: string) => {
     if (isPro) return false;
@@ -87,22 +89,20 @@ export default function AppPage() {
       toast({
         variant: "destructive",
         title: "Please enter some text",
-        description: "Paste or type the message you want to rewrite.",
+        description: "Paste or type the message you want to fix.",
       });
       return;
     }
 
-    // Check if user is logged in
     if (!user) {
       toast({
         title: "Login required",
-        description: "Please sign in to rewrite messages.",
+        description: "Please sign in to fix messages.",
       });
       navigate("/auth");
       return;
     }
 
-    // Check if user is trying to use locked features
     if (isToneLocked(selectedTone)) {
       setUpgradeReason("premium tone styles");
       setShowUpgrade(true);
@@ -133,21 +133,15 @@ export default function AppPage() {
 
       if (data.error) {
         if (data.requiresUpgrade) {
-          setUpgradeReason("unlimited rewrites");
-          setShowUpgrade(true);
-          toast({
-            variant: "destructive",
-            title: "Daily limit reached",
-            description: "Upgrade to Pro for unlimited rewrites!",
-          });
+          setShowLimitReached(true);
         } else if (data.lockedFeature) {
           setUpgradeReason(data.lockedFeature);
           setShowUpgrade(true);
         } else {
           toast({
             variant: "destructive",
-            title: "Error",
-            description: data.error,
+            title: "Couldn't process your request",
+            description: "We couldn't process your request right now. Please try again in a few seconds.",
           });
         }
         return;
@@ -159,8 +153,8 @@ export default function AppPage() {
       console.error("Rewrite error:", error);
       toast({
         variant: "destructive",
-        title: "Something went wrong",
-        description: "Please try again later.",
+        title: "Couldn't process your request",
+        description: "We couldn't process your request right now. Please try again in a few seconds.",
       });
     } finally {
       setIsLoading(false);
@@ -171,16 +165,13 @@ export default function AppPage() {
     await navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     toast({
-      title: "Copied!",
-      description: "Text copied to clipboard.",
+      title: "Copied to clipboard",
+      description: "Your message has been copied and is ready to paste.",
     });
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const selectedToneData = TONES.find(t => t.value === selectedTone);
-  const creditsRemaining = profile 
-    ? Math.max(0, FREE_DAILY_LIMIT - (profile.daily_credits_used ?? 0))
-    : FREE_DAILY_LIMIT;
 
   if (authLoading) {
     return (
@@ -207,32 +198,42 @@ export default function AppPage() {
           </div>
 
           {/* Credits Display */}
-          {!isPro && (
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass">
-                <span className="text-sm text-muted-foreground">Daily Fixes:</span>
-                <div className="flex items-center gap-1">
-                  <span className={`font-bold ${creditsRemaining <= 2 ? 'text-destructive' : 'text-foreground'}`}>
-                    {creditsRemaining}
-                  </span>
-                  <span className="text-muted-foreground">/ {FREE_DAILY_LIMIT}</span>
-                </div>
-                <Link to="/pricing" className="text-xs text-primary hover:underline">
-                  Upgrade
+          {!isPro && user && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-full glass">
+                <span className="text-sm font-medium">Free Credits:</span>
+                <span className={`font-bold text-lg ${creditsRemaining <= 2 ? 'text-destructive' : 'text-primary'}`}>
+                  {creditsUsed} / {FREE_DAILY_LIMIT}
+                </span>
+                <span className="text-sm text-muted-foreground">used today</span>
+              </div>
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/pricing">
+                  <Crown className="h-4 w-4 mr-1.5" />
+                  Upgrade to Pro
                 </Link>
+              </Button>
+            </div>
+          )}
+
+          {isPro && (
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-primary text-primary-foreground">
+                <Crown className="h-4 w-4" />
+                <span className="text-sm font-medium">Pro — Unlimited fixes</span>
               </div>
             </div>
           )}
 
           {/* Input Section */}
           <Card className="glass-strong mb-6">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               {/* Text Input */}
               <Textarea
                 placeholder="Paste your message here... What are you about to send?"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="min-h-[150px] mb-4 resize-none bg-background/50 border-border/50 focus:border-primary/50"
+                className="min-h-[120px] sm:min-h-[150px] mb-4 resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base"
               />
 
               {/* Quick Tone Buttons */}
@@ -240,12 +241,17 @@ export default function AppPage() {
                 <label className="text-sm font-medium mb-2 block">Quick Fix</label>
                 <QuickToneButtons 
                   onSelectTone={(tone) => {
-                    setSelectedTone(tone);
-                    if (!isToneLocked(tone) && inputText.trim()) {
-                      handleRewrite();
-                    } else if (isToneLocked(tone)) {
+                    if (isToneLocked(tone)) {
                       setUpgradeReason("premium tone styles");
                       setShowUpgrade(true);
+                      return;
+                    }
+                    setSelectedTone(tone);
+                    if (inputText.trim()) {
+                      // We need to trigger rewrite after state update
+                      setTimeout(() => {
+                        document.getElementById('fix-button')?.click();
+                      }, 50);
                     }
                   }}
                   isToneLocked={isToneLocked}
@@ -274,7 +280,12 @@ export default function AppPage() {
                             <div className="flex items-center gap-2 w-full">
                               <span>{tone.emoji}</span>
                               <span>{tone.label}</span>
-                              {locked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+                              {locked && (
+                                <span className="flex items-center gap-1 ml-auto text-muted-foreground">
+                                  <Lock className="h-3 w-3" />
+                                  <span className="text-[10px]">Pro</span>
+                                </span>
+                              )}
                             </div>
                           </SelectItem>
                         );
@@ -306,7 +317,12 @@ export default function AppPage() {
                           >
                             <div className="flex items-center gap-2 w-full">
                               <span>{lang.label}</span>
-                              {locked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+                              {locked && (
+                                <span className="flex items-center gap-1 ml-auto text-muted-foreground">
+                                  <Lock className="h-3 w-3" />
+                                  <span className="text-[10px]">Pro</span>
+                                </span>
+                              )}
                             </div>
                           </SelectItem>
                         );
@@ -318,6 +334,7 @@ export default function AppPage() {
 
               {/* Fix Button */}
               <Button 
+                id="fix-button"
                 variant="hero" 
                 size="lg" 
                 className="w-full"
@@ -342,26 +359,50 @@ export default function AppPage() {
           {/* Results Section */}
           {result && (
             <div className="space-y-4 animate-slide-up">
+              {/* Original Message */}
+              <Card className="glass border-border/50">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      Original Message
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{inputText}</p>
+                </CardContent>
+              </Card>
+
+              {/* Arrow */}
+              <div className="flex justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowDown className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+
               {/* Main Result */}
               <Card className="glass-strong border-primary/30">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                       <Sparkles className="h-3 w-3 mr-1" />
-                      Here's a better way to say it
+                      Texify AI Improved Message
                     </Badge>
                     <Button
-                      variant="ghost"
+                      variant="default"
                       size="sm"
                       onClick={() => copyToClipboard(result.main, 0)}
-                      className="h-8"
+                      className="h-9 px-4"
                     >
                       {copiedIndex === 0 ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <>
+                          <Check className="h-4 w-4 mr-1.5 text-green-500" />
+                          Copied!
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-4 w-4 mr-1.5" />
+                          Copy Text
+                        </>
                       )}
-                      <span className="ml-1">Copy</span>
                     </Button>
                   </div>
                   <p className="text-lg leading-relaxed">{result.main}</p>
@@ -369,32 +410,40 @@ export default function AppPage() {
               </Card>
 
               {/* Alternative Results */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                {result.alternatives.map((alt, index) => (
-                  <Card key={index} className="glass">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          Option {index + 2}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(alt, index + 1)}
-                          className="h-7 px-2"
-                        >
-                          {copiedIndex === index + 1 ? (
-                            <Check className="h-3 w-3 text-green-500" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-sm leading-relaxed">{alt}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {result.alternatives.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {result.alternatives.map((alt, index) => (
+                    <Card key={index} className="glass">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            Option {index + 2}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(alt, index + 1)}
+                            className="h-8 px-3"
+                          >
+                            {copiedIndex === index + 1 ? (
+                              <>
+                                <Check className="h-3 w-3 mr-1 text-green-500" />
+                                <span className="text-xs">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3 mr-1" />
+                                <span className="text-xs">Copy</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-sm leading-relaxed">{alt}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
 
               {/* Try Again Button */}
               <div className="flex justify-center pt-4">
@@ -412,62 +461,76 @@ export default function AppPage() {
             </div>
           )}
 
-          {/* Upgrade Modal */}
-          {showUpgrade && (
+          {/* Daily Limit Reached Modal */}
+          {showLimitReached && (
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <Card className="glass-strong max-w-md w-full animate-scale-in">
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
-                    <Crown className="h-8 w-8 text-primary-foreground" />
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+                    <Clock className="h-8 w-8 text-destructive" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-3">You've used all 5 free message fixes today</h2>
                   <p className="text-muted-foreground mb-6">
-                    {upgradeReason === "unlimited rewrites" 
-                      ? `You've used all ${FREE_DAILY_LIMIT} free fixes for today. Upgrade to Pro for unlimited access!`
-                      : `Unlock ${upgradeReason} and more with Texify Pro!`
-                    }
+                    Free credits reset every 24 hours.
                   </p>
-                  <div className="space-y-2 text-left mb-6 bg-muted/30 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>Unlimited message fixes</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>All 14+ tone styles including Rizz, Savage, Sarcastic</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>All 20+ languages</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>Faster responses & priority processing</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>Fix history</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4 italic">
-                    ⚡ Payments coming soon.
+                  <p className="text-sm font-medium mb-6">
+                    Upgrade to Pro for unlimited message fixes.
                   </p>
                   <div className="space-y-3">
                     <Button variant="hero" className="w-full" asChild>
                       <Link to="/pricing">
-                        View Pro Details
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                        <Crown className="h-4 w-4 mr-2" />
+                        Upgrade to Pro
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full" onClick={() => setShowLimitReached(false)}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Come back tomorrow
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Pro Feature Upgrade Modal */}
+          {showUpgrade && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <Card className="glass-strong max-w-md w-full animate-scale-in">
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
+                    <Lock className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-2">🔒 Pro Feature</h2>
+                  <p className="text-muted-foreground mb-6">
+                    This tone is available in Texify Pro. Upgrade to unlock unlimited message fixes and all tone styles.
+                  </p>
+                  <div className="text-left mb-6 space-y-2.5 bg-muted/30 rounded-lg p-4">
+                    <p className="text-sm font-semibold mb-3">Upgrade to Texify Pro to unlock:</p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                      <span>Unlimited message fixes</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                      <span>All tone styles (Savage, Flirty, Confident...)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                      <span>Faster responses</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Button variant="hero" className="w-full" asChild>
+                      <Link to="/pricing">
+                        <Crown className="h-4 w-4 mr-2" />
+                        Upgrade to Pro
                       </Link>
                     </Button>
                     <Button variant="ghost" className="w-full" onClick={() => setShowUpgrade(false)}>
-                      Okay
+                      Maybe later
                     </Button>
                   </div>
-                  {upgradeReason === "unlimited rewrites" && (
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Your fixes reset in 24 hours
-                    </p>
-                  )}
                 </CardContent>
               </Card>
             </div>

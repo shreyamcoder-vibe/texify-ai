@@ -21,9 +21,7 @@ export function Navbar() {
     navigate("/");
   };
 
-  const creditsRemaining = profile 
-    ? FREE_DAILY_LIMIT - (profile.daily_credits_used ?? 0)
-    : FREE_DAILY_LIMIT;
+  const creditsUsed = profile?.daily_credits_used ?? 0;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -40,7 +38,6 @@ export function Navbar() {
 
           {/* Navigation */}
           <div className="flex items-center gap-4">
-            {/* Common Nav Links */}
             <div className="hidden sm:flex items-center gap-2">
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/pricing">Pricing</Link>
@@ -50,11 +47,12 @@ export function Navbar() {
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {!profile?.is_pro && (
                   <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 text-sm">
-                    <span className="text-muted-foreground">Credits:</span>
-                    <span className="font-semibold text-foreground">{creditsRemaining}/{FREE_DAILY_LIMIT}</span>
+                    <span className="text-muted-foreground">Free Credits:</span>
+                    <span className="font-semibold text-foreground">{creditsUsed}/{FREE_DAILY_LIMIT}</span>
+                    <span className="text-muted-foreground text-xs">used</span>
                   </div>
                 )}
                 {profile?.is_pro && (
