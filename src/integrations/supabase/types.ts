@@ -59,6 +59,30 @@ export type Database = {
         }
         Relationships: []
       }
+      requests_log: {
+        Row: {
+          created_at: string
+          id: string
+          input_length: number
+          tone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_length: number
+          tone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_length?: number
+          tone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rewrite_history: {
         Row: {
           alternatives: string[] | null
@@ -88,6 +112,36 @@ export type Database = {
           rewritten_text?: string
           target_language?: string
           tone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          created_at: string
+          daily_credits_used: number
+          daily_reset_timestamp: string
+          is_pro: boolean
+          monthly_bonus_used: number
+          monthly_reset_timestamp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_credits_used?: number
+          daily_reset_timestamp?: string
+          is_pro?: boolean
+          monthly_bonus_used?: number
+          monthly_reset_timestamp?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_credits_used?: number
+          daily_reset_timestamp?: string
+          is_pro?: boolean
+          monthly_bonus_used?: number
+          monthly_reset_timestamp?: string
           user_id?: string
         }
         Relationships: []

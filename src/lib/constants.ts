@@ -1,18 +1,20 @@
 export const TONES = [
-  { value: "polite", label: "Polite", emoji: "🙏", description: "Respectful and courteous", free: true },
-  { value: "professional", label: "Professional", emoji: "💼", description: "Corporate and formal", free: true },
-  { value: "friendly", label: "Friendly", emoji: "😊", description: "Warm and approachable", free: true },
-  { value: "calm", label: "Calm", emoji: "😌", description: "Peaceful and composed", free: false },
+  // Free tones
+  { value: "polite", label: "Polite", emoji: "🙏", description: "Warm and respectful", free: true },
+  { value: "professional", label: "Professional", emoji: "💼", description: "Clean and workplace-ready", free: true },
+  { value: "friendly", label: "Friendly", emoji: "😊", description: "Casual and approachable", free: true },
+  // Pro tones
+  { value: "flirty", label: "Rizz / Flirty", emoji: "😏", description: "Smooth, charming, confident", free: false },
+  { value: "savage", label: "Savage", emoji: "🔥", description: "Zero filter. Maximum impact.", free: false },
+  { value: "calm", label: "Calm", emoji: "😌", description: "De-escalate any situation", free: false },
   { value: "confident", label: "Confident", emoji: "💪", description: "Assertive and self-assured", free: false },
-  { value: "assertive", label: "Assertive", emoji: "🎯", description: "Direct and clear", free: false },
-  { value: "persuasive", label: "Persuasive", emoji: "🤝", description: "Convincing and compelling", free: false },
-  { value: "flirty", label: "Flirty / Rizz", emoji: "😏", description: "Charming and playful", free: false },
-  { value: "sarcastic", label: "Sarcastic", emoji: "🙄", description: "Witty and ironic", free: false },
-  { value: "savage", label: "Savage", emoji: "🔥", description: "Clever and bold", free: false },
-  { value: "emotional", label: "Emotionally Intelligent", emoji: "💗", description: "Empathetic and understanding", free: false },
-  { value: "apology", label: "Apology", emoji: "🙏", description: "Sincere and remorseful", free: false },
-  { value: "boundary", label: "Boundary-setting", emoji: "🛡️", description: "Firm but respectful", free: false },
-  { value: "crisp", label: "Short & Crisp", emoji: "⚡", description: "Concise and punchy", free: false },
+  { value: "persuasive", label: "Persuasive", emoji: "🤝", description: "Compelling and convincing", free: false },
+  { value: "sarcastic", label: "Sarcastic", emoji: "🙄", description: "Sharp and dry", free: false },
+  { value: "emotional", label: "Emotionally Intelligent", emoji: "💗", description: "Empathetic and aware", free: false },
+  { value: "apology", label: "Apology", emoji: "🙏", description: "Genuine and heartfelt", free: false },
+  { value: "boundary", label: "Boundary-setting", emoji: "🛡️", description: "Firm but calm", free: false },
+  { value: "crisp", label: "Short & Crisp", emoji: "⚡", description: "Shortest possible version", free: false },
+  { value: "negotiation", label: "Negotiation", emoji: "🤝", description: "Win deals, keep respect", free: false },
 ] as const;
 
 export const LANGUAGES = [
@@ -38,13 +40,14 @@ export const LANGUAGES = [
   { value: "sv", label: "Swedish (Svenska)", free: false },
 ] as const;
 
-export const FREE_DAILY_LIMIT = 5;
+export const DAILY_CREDIT_LIMIT = 100;
+export const MONTHLY_BONUS_LIMIT = 300;
+export const FREE_DAILY_LIMIT = DAILY_CREDIT_LIMIT; // alias for backward compat
 
 export const FREE_TONES: string[] = TONES.filter(t => t.free).map(t => t.value);
 export const FREE_LANGUAGES: string[] = LANGUAGES.filter(l => l.free).map(l => l.value);
 
 export const PRICING = {
-  india: { amount: 99, currency: "₹", period: "month" },
-  us: { amount: 3.99, currency: "$", period: "month" },
-  default: { amount: 3.99, currency: "$", period: "month" },
+  india: { monthly: { amount: 49, currency: "₹" }, yearly: { amount: 399, currency: "₹", save: "32%" } },
+  global: { monthly: { amount: 3.99, currency: "$" }, yearly: { amount: 39, currency: "$", save: "18%" } },
 } as const;

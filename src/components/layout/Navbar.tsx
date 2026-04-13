@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FREE_DAILY_LIMIT } from "@/lib/constants";
 
 export function Navbar() {
   const { user, profile, signOut, loading } = useAuth();
@@ -21,13 +20,10 @@ export function Navbar() {
     navigate("/");
   };
 
-  const creditsUsed = profile?.daily_credits_used ?? 0;
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <Sparkles className="h-7 w-7 text-primary transition-transform duration-300 group-hover:rotate-12" />
@@ -36,25 +32,15 @@ export function Navbar() {
             <span className="text-xl font-bold gradient-text">Texify AI</span>
           </Link>
 
-          {/* Navigation */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/pricing">Pricing</Link>
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/pricing">Pricing</Link>
+            </Button>
 
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
-                {!profile?.is_pro && (
-                  <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 text-sm">
-                    <span className="text-muted-foreground">Free Credits:</span>
-                    <span className="font-semibold text-foreground">{creditsUsed}/{FREE_DAILY_LIMIT}</span>
-                    <span className="text-muted-foreground text-xs">used</span>
-                  </div>
-                )}
                 {profile?.is_pro && (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
                     <Crown className="h-4 w-4" />
@@ -102,7 +88,7 @@ export function Navbar() {
                   <Link to="/auth">Login</Link>
                 </Button>
                 <Button variant="hero" asChild>
-                  <Link to="/app">Get Started</Link>
+                  <Link to="/auth?mode=signup">Sign Up Free</Link>
                 </Button>
               </div>
             )}
