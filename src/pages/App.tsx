@@ -1,117 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Navbar } from "@/components/layout/Navbar";
-import { QuickToneButtons } from "@/components/app/QuickToneButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TONES, LANGUAGES, FREE_DAILY_LIMIT, FREE_TONES, FREE_LANGUAGES } from "@/lib/constants";
-import { 
-  Sparkles, 
-  Copy, 
-  Check, 
-  Loader2, 
-  Crown,
-  ArrowRight,
-  ArrowDown,
-  RefreshCw,
-  Lock,
-  Clock
+import { TONES, DAILY_CREDIT_LIMIT, MONTHLY_BONUS_LIMIT, FREE_TONES } from "@/lib/constants";
+import {
+  Sparkles, Copy, Check, Loader2, Crown, ArrowDown, RefreshCw, Lock, Clock
 } from "lucide-react";
 
-interface RewriteResult {
-  main: string;
-  alternatives: string[];
-  creditsUsed: number;
-  creditsRemaining: number | string;
+interface FixResult {
+  fixedMessage: string;
+  creditCost: number;
+  dailyCreditsUsed: number;
+  dailyCreditsRemaining: number | string;
+  monthlyBonusUsed: number;
+  monthlyBonusRemaining: number | string;
+  isPro: boolean;
+}
+
+interface UserCredits {
+  daily_credits_used: number;
+  monthly_bonus_used: number;
+  is_pro: boolean;
 }
 
 export default function AppPage() {
-  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [inputText, setInputText] = useState("");
   const [selectedTone, setSelectedTone] = useState("professional");
-  const [selectedLanguage, setSelectedLanguage] = useState("auto");
-  const [result, setResult] = useState<RewriteResult | null>(null);
+  const [result, setResult] = useState<FixResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showLimitReached, setShowLimitReached] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<string>("");
+  const [limitType, setLimitType] = useState<"daily" | "monthly">("daily");
+  const [cooldown, setCooldown] = useState(0);
+  const [credits, setCredits] = useState<UserCredits | null>(null);
 
-  const isPro = profile?.is_pro ?? false;
-  const creditsUsed = profile?.daily_credits_used ?? 0;
-  const creditsRemaining = Math.max(0, FREE_DAILY_LIMIT - creditsUsed);
+  const isPro = credits?.is_pro ?? false;
+  const dailyRemaining = isPro ? "∞" : Math.max(0, DAILY_CREDIT_LIMIT - (credits?.daily_credits_used ?? 0));
+  const monthlyBonusRemaining = isPro ? "∞" : Math.max(0, MONTHLY_BONUS_LIMIT - (credits?.monthly_bonus_used ?? 0));
 
-  const isToneLocked = (toneValue: string) => {
-    if (isPro) return false;
-    return !FREE_TONES.includes(toneValue);
-  };
+  const isProTone = (tone: string) => !FREE_TONES.includes(tone);
 
-  const isLanguageLocked = (langValue: string) => {
-    if (isPro) return false;
-    return !FREE_LANGUAGES.includes(langValue);
-  };
+  // Fetch credits
+  const fetchCredits = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_credits" as any)
+      .select("daily_credits_used, monthly_bonus_used, is_pro")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data) setCredits(data as unknown as UserCredits);
+  }, [user]);
 
-  const handleToneChange = (value: string) => {
-    if (isToneLocked(value)) {
-      setUpgradeReason("premium tone styles");
-      setShowUpgrade(true);
-      return;
-    }
-    setSelectedTone(value);
-  };
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
 
-  const handleLanguageChange = (value: string) => {
-    if (isLanguageLocked(value)) {
-      setUpgradeReason("all languages");
-      setShowUpgrade(true);
-      return;
-    }
-    setSelectedLanguage(value);
-  };
+  // Cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
-  const handleRewrite = async () => {
-    if (!inputText.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Please enter some text",
-        description: "Paste or type the message you want to fix.",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please sign in to fix messages.",
-      });
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
       navigate("/auth");
+    }
+  }, [authLoading, user, navigate]);
+
+  const handleToneSelect = (tone: string) => {
+    if (!isPro && isProTone(tone)) {
+      // Check if bonus is exhausted
+      if ((credits?.monthly_bonus_used ?? 0) >= MONTHLY_BONUS_LIMIT) {
+        setShowUpgrade(true);
+        return;
+      }
+    }
+    setSelectedTone(tone);
+  };
+
+  const handleFix = async () => {
+    if (!inputText.trim()) {
+      toast({ variant: "destructive", title: "Empty message", description: "Please enter a message to fix." });
       return;
     }
-
-    if (isToneLocked(selectedTone)) {
-      setUpgradeReason("premium tone styles");
-      setShowUpgrade(true);
-      return;
-    }
-
-    if (isLanguageLocked(selectedLanguage)) {
-      setUpgradeReason("all languages");
-      setShowUpgrade(true);
+    if (!user) {
+      navigate("/auth");
       return;
     }
 
@@ -119,41 +105,41 @@ export default function AppPage() {
     setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke("rewrite-text", {
-        body: {
-          text: inputText,
-          tone: selectedTone,
-          targetLanguage: selectedLanguage,
-        },
+      const { data, error } = await supabase.functions.invoke("fix-message", {
+        body: { message: inputText.slice(0, 300), tone: selectedTone },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      if (data.error) {
+      if (data?.error) {
         if (data.requiresUpgrade) {
+          if (data.type === "monthly_bonus") {
+            setLimitType("monthly");
+          } else {
+            setLimitType("daily");
+          }
           setShowLimitReached(true);
-        } else if (data.lockedFeature) {
-          setUpgradeReason(data.lockedFeature);
-          setShowUpgrade(true);
         } else {
-          toast({
-            variant: "destructive",
-            title: "Couldn't process your request",
-            description: "We couldn't process your request right now. Please try again in a few seconds.",
-          });
+          toast({ variant: "destructive", title: "Error", description: data.error });
         }
         return;
       }
 
       setResult(data);
-      refreshProfile();
+      setCooldown(3);
+      // Update local credits
+      if (data.dailyCreditsUsed !== undefined) {
+        setCredits(prev => prev ? {
+          ...prev,
+          daily_credits_used: data.dailyCreditsUsed,
+          monthly_bonus_used: data.monthlyBonusUsed,
+        } : prev);
+      }
     } catch (error) {
-      console.error("Rewrite error:", error);
+      console.error("Fix error:", error);
       toast({
         variant: "destructive",
-        title: "Couldn't process your request",
+        title: "Request failed",
         description: "We couldn't process your request right now. Please try again in a few seconds.",
       });
     } finally {
@@ -161,17 +147,20 @@ export default function AppPage() {
     }
   };
 
-  const copyToClipboard = async (text: string, index: number) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    toast({
-      title: "Copied to clipboard",
-      description: "Your message has been copied and is ready to paste.",
-    });
-    setTimeout(() => setCopiedIndex(null), 2000);
+  const handleQuickTone = (tone: string) => {
+    handleToneSelect(tone);
+    if (inputText.trim() && !isLoading && cooldown <= 0) {
+      setSelectedTone(tone);
+      setTimeout(() => document.getElementById("fix-button")?.click(), 50);
+    }
   };
 
-  const selectedToneData = TONES.find(t => t.value === selectedTone);
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast({ title: "Copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (authLoading) {
     return (
@@ -181,355 +170,210 @@ export default function AppPage() {
     );
   }
 
+  if (!user) return null;
+
+  const charCount = inputText.length;
+
   return (
     <div className="min-h-screen gradient-subtle">
       <Navbar />
-      
       <main className="pt-24 pb-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-              Fix your message
-            </h1>
-            <p className="text-muted-foreground">
-              Paste what you're about to send. Pick a tone. Send with confidence.
-            </p>
-          </div>
-
-          {/* Credits Display */}
-          {!isPro && user && (
+        <div className="container mx-auto max-w-2xl">
+          {/* Credits Bar */}
+          {!isPro && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-full glass">
-                <span className="text-sm font-medium">Free Credits:</span>
-                <span className={`font-bold text-lg ${creditsRemaining <= 2 ? 'text-destructive' : 'text-primary'}`}>
-                  {creditsUsed} / {FREE_DAILY_LIMIT}
-                </span>
-                <span className="text-sm text-muted-foreground">used today</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm">
+                <span className="font-medium">{dailyRemaining} credits left today</span>
+                {isProTone(selectedTone) && (
+                  <span className="text-muted-foreground">· {monthlyBonusRemaining} bonus left</span>
+                )}
               </div>
               <Button variant="hero" size="sm" asChild>
-                <Link to="/pricing">
-                  <Crown className="h-4 w-4 mr-1.5" />
-                  Upgrade to Pro
-                </Link>
+                <Link to="/pricing"><Crown className="h-4 w-4 mr-1.5" />Upgrade to Pro</Link>
               </Button>
             </div>
           )}
-
           {isPro && (
             <div className="flex justify-center mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-primary text-primary-foreground">
-                <Crown className="h-4 w-4" />
-                <span className="text-sm font-medium">Pro — Unlimited fixes</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
+                <Crown className="h-4 w-4" /> Pro — Unlimited fixes
               </div>
             </div>
           )}
 
-          {/* Input Section */}
-          <Card className="glass-strong mb-6">
-            <CardContent className="p-4 sm:p-6">
-              {/* Text Input */}
-              <Textarea
-                placeholder="Paste your message here... What are you about to send?"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                className="min-h-[120px] sm:min-h-[150px] mb-4 resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base"
-              />
+          {/* Tone Cards */}
+          <div className="mb-4">
+            <div className="flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 scrollbar-hide">
+              {TONES.map(tone => {
+                const locked = !isPro && isProTone(tone.value);
+                const selected = selectedTone === tone.value;
+                const bonusExhausted = locked && (credits?.monthly_bonus_used ?? 0) >= MONTHLY_BONUS_LIMIT;
+                return (
+                  <button
+                    key={tone.value}
+                    onClick={() => handleToneSelect(tone.value)}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg border text-left transition-all min-w-[140px] ${
+                      selected
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                        : "border-border/50 bg-card/50 hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-sm">{tone.emoji}</span>
+                      <span className="text-xs font-semibold truncate">{tone.label}</span>
+                      {locked && (
+                        <Lock className={`h-3 w-3 ml-auto ${bonusExhausted ? "text-destructive" : "text-amber-500"}`} />
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{tone.description}</p>
+                    {locked && !bonusExhausted && (
+                      <p className="text-[9px] text-amber-600 mt-0.5">Uses bonus credits</p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-              {/* Quick Tone Buttons */}
-              <div className="mb-4">
-                <label className="text-sm font-medium mb-2 block">Quick Fix</label>
-                <QuickToneButtons 
-                  onSelectTone={(tone) => {
-                    if (isToneLocked(tone)) {
-                      setUpgradeReason("premium tone styles");
-                      setShowUpgrade(true);
-                      return;
-                    }
-                    setSelectedTone(tone);
-                    if (inputText.trim()) {
-                      // We need to trigger rewrite after state update
-                      setTimeout(() => {
-                        document.getElementById('fix-button')?.click();
-                      }, 50);
-                    }
-                  }}
-                  isToneLocked={isToneLocked}
-                  disabled={isLoading || !inputText.trim()}
+          {/* Input */}
+          <Card className="glass-strong mb-4">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Textarea
+                  placeholder="Type or paste your message here..."
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value.slice(0, 300))}
+                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base pr-16"
                 />
-              </div>
-
-              {/* Controls */}
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                {/* Tone Selector */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Tone / Style</label>
-                  <Select value={selectedTone} onValueChange={handleToneChange}>
-                    <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select tone" />
-                    </SelectTrigger>
-                    <SelectContent className="glass max-h-[300px]">
-                      {TONES.map((tone) => {
-                        const locked = isToneLocked(tone.value);
-                        return (
-                          <SelectItem 
-                            key={tone.value} 
-                            value={tone.value}
-                            className={locked ? "opacity-70" : ""}
-                          >
-                            <div className="flex items-center gap-2 w-full">
-                              <span>{tone.emoji}</span>
-                              <span>{tone.label}</span>
-                              {locked && (
-                                <span className="flex items-center gap-1 ml-auto text-muted-foreground">
-                                  <Lock className="h-3 w-3" />
-                                  <span className="text-[10px]">Pro</span>
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  {selectedToneData && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedToneData.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Language Selector */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Output Language</label>
-                  <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-                    <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent className="glass max-h-[300px]">
-                      {LANGUAGES.map((lang) => {
-                        const locked = isLanguageLocked(lang.value);
-                        return (
-                          <SelectItem 
-                            key={lang.value} 
-                            value={lang.value}
-                            className={locked ? "opacity-70" : ""}
-                          >
-                            <div className="flex items-center gap-2 w-full">
-                              <span>{lang.label}</span>
-                              {locked && (
-                                <span className="flex items-center gap-1 ml-auto text-muted-foreground">
-                                  <Lock className="h-3 w-3" />
-                                  <span className="text-[10px]">Pro</span>
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <span className={`absolute bottom-2 right-3 text-xs ${charCount >= 280 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {charCount}/300
+                </span>
               </div>
 
               {/* Fix Button */}
-              <Button 
+              <Button
                 id="fix-button"
-                variant="hero" 
-                size="lg" 
-                className="w-full"
-                onClick={handleRewrite}
-                disabled={isLoading || !inputText.trim()}
+                variant="hero"
+                size="lg"
+                className="w-full mt-4 min-h-[52px]"
+                onClick={handleFix}
+                disabled={isLoading || !inputText.trim() || cooldown > 0}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    Fixing...
-                  </>
+                  <><Loader2 className="h-5 w-5 animate-spin mr-2" />Fixing...</>
+                ) : cooldown > 0 ? (
+                  `Wait ${cooldown}s...`
                 ) : (
-                  <>
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Fix my message
-                  </>
+                  <><Sparkles className="h-5 w-5 mr-2" />Fix My Message ✨</>
                 )}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Results Section */}
+          {/* Result */}
           {result && (
             <div className="space-y-4 animate-slide-up">
-              {/* Original Message */}
               <Card className="glass border-border/50">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                      Original Message
-                    </Badge>
-                  </div>
+                <CardContent className="p-4">
+                  <Badge variant="outline" className="text-xs text-muted-foreground mb-2">Original Message</Badge>
                   <p className="text-sm text-muted-foreground leading-relaxed">{inputText}</p>
                 </CardContent>
               </Card>
 
-              {/* Arrow */}
               <div className="flex justify-center">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <ArrowDown className="h-5 w-5 text-primary" />
                 </div>
               </div>
 
-              {/* Main Result */}
               <Card className="glass-strong border-primary/30">
-                <CardContent className="p-4 sm:p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Texify AI Improved Message
+                      <Sparkles className="h-3 w-3 mr-1" /> Texify AI Improved Message
                     </Badge>
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => copyToClipboard(result.main, 0)}
-                      className="h-9 px-4"
+                      onClick={() => copyToClipboard(result.fixedMessage)}
+                      className="h-9 px-4 min-h-[44px]"
                     >
-                      {copiedIndex === 0 ? (
-                        <>
-                          <Check className="h-4 w-4 mr-1.5 text-primary" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-1.5" />
-                          Copy Text
-                        </>
-                      )}
+                      {copied ? <><Check className="h-4 w-4 mr-1.5" />Copied!</> : <><Copy className="h-4 w-4 mr-1.5" />Copy Text</>}
                     </Button>
                   </div>
-                  <p className="text-lg leading-relaxed">{result.main}</p>
+                  <p className="text-lg leading-relaxed">{result.fixedMessage}</p>
+                  {!isPro && (
+                    <p className="text-xs text-muted-foreground mt-3 text-right">— Fixed by Texify AI · texify.app</p>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Alternative Results */}
-              {result.alternatives.length > 0 && (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {result.alternatives.map((alt, index) => (
-                    <Card key={index} className="glass">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            Option {index + 2}
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyToClipboard(alt, index + 1)}
-                            className="h-8 px-3"
-                          >
-                            {copiedIndex === index + 1 ? (
-                              <>
-                                <Check className="h-3 w-3 mr-1 text-primary" />
-                                <span className="text-xs">Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3 w-3 mr-1" />
-                                <span className="text-xs">Copy</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        <p className="text-sm leading-relaxed">{alt}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {/* Try Again Button */}
               <div className="flex justify-center pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setResult(null);
-                    setInputText("");
-                  }}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Fix another message
+                <Button variant="outline" onClick={() => { setResult(null); setInputText(""); }}>
+                  <RefreshCw className="h-4 w-4 mr-2" /> Fix another message
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Daily Limit Reached Modal */}
+          {/* Limit Reached Modal */}
           {showLimitReached && (
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <Card className="glass-strong max-w-md w-full animate-scale-in">
-                <CardContent className="p-6 sm:p-8 text-center">
+                <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
                     <Clock className="h-8 w-8 text-destructive" />
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-3">You've used all 5 free message fixes today</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Free credits reset every 24 hours.
+                  <h2 className="text-xl font-bold mb-2">You've used all your credits today 🔥</h2>
+                  <p className="text-muted-foreground mb-2">
+                    {limitType === "daily"
+                      ? "Your 100 daily credits are exhausted. Credits reset every 24 hours."
+                      : "Your 300 monthly Pro tone bonus credits are exhausted."}
                   </p>
                   <p className="text-sm font-medium mb-6">
-                    Upgrade to Pro for unlimited message fixes.
+                    Upgrade to Pro — unlimited fixes, all tones, zero watermark.
                   </p>
                   <div className="space-y-3">
-                    <Button variant="hero" className="w-full" asChild>
-                      <Link to="/pricing">
-                        <Crown className="h-4 w-4 mr-2" />
-                        Upgrade to Pro
-                      </Link>
+                    <Button variant="hero" className="w-full min-h-[44px]" asChild>
+                      <Link to="/pricing"><Crown className="h-4 w-4 mr-2" />Upgrade to Pro →</Link>
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={() => setShowLimitReached(false)}>
-                      <Clock className="h-4 w-4 mr-2" />
-                      Come back tomorrow
-                    </Button>
+                    <button className="text-sm text-muted-foreground hover:underline" onClick={() => setShowLimitReached(false)}>
+                      Maybe later
+                    </button>
                   </div>
                 </CardContent>
               </Card>
             </div>
           )}
 
-          {/* Pro Feature Upgrade Modal */}
+          {/* Pro Feature Modal */}
           {showUpgrade && (
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <Card className="glass-strong max-w-md w-full animate-scale-in">
-                <CardContent className="p-6 sm:p-8 text-center">
+                <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
                     <Lock className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-2">🔒 Pro Feature</h2>
+                  <h2 className="text-xl font-bold mb-2">🔒 Pro Feature</h2>
                   <p className="text-muted-foreground mb-6">
                     This tone is available in Texify Pro. Upgrade to unlock unlimited message fixes and all tone styles.
                   </p>
-                  <div className="text-left mb-6 space-y-2.5 bg-muted/30 rounded-lg p-4">
-                    <p className="text-sm font-semibold mb-3">Upgrade to Texify Pro to unlock:</p>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      <span>Unlimited message fixes</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      <span>All tone styles (Savage, Flirty, Confident...)</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      <span>Faster responses</span>
-                    </div>
+                  <div className="text-left mb-6 space-y-2 bg-muted/30 rounded-lg p-4">
+                    <p className="text-sm font-semibold mb-2">Upgrade to Texify Pro to unlock:</p>
+                    {["Unlimited message fixes", "All 14 tone styles", "No watermark", "Faster responses"].map(f => (
+                      <div key={f} className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary shrink-0" />
+                        <span>{f}</span>
+                      </div>
+                    ))}
                   </div>
                   <div className="space-y-3">
-                    <Button variant="hero" className="w-full" asChild>
-                      <Link to="/pricing">
-                        <Crown className="h-4 w-4 mr-2" />
-                        Upgrade to Pro
-                      </Link>
+                    <Button variant="hero" className="w-full min-h-[44px]" asChild>
+                      <Link to="/pricing"><Crown className="h-4 w-4 mr-2" />Upgrade to Pro</Link>
                     </Button>
-                    <Button variant="ghost" className="w-full" onClick={() => setShowUpgrade(false)}>
+                    <button className="text-sm text-muted-foreground hover:underline" onClick={() => setShowUpgrade(false)}>
                       Maybe later
-                    </Button>
+                    </button>
                   </div>
                 </CardContent>
               </Card>
