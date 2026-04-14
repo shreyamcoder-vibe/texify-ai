@@ -24,8 +24,7 @@ const TONE_PROMPTS: Record<string, string> = {
 };
 
 const FREE_TONES = ["polite", "professional", "friendly"];
-const DAILY_CREDIT_LIMIT = 100;
-const MONTHLY_BONUS_LIMIT = 300;
+const DAILY_CREDIT_LIMIT = 30;
 
 function getCreditCost(messageLength: number): number {
   if (messageLength <= 100) return 1;
@@ -115,7 +114,6 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!credits) {
-      // Create credits row if missing
       await adminClient.from("user_credits").insert({ user_id: userId });
       credits = {
         user_id: userId,
@@ -140,58 +138,28 @@ serve(async (req) => {
         .eq("user_id", userId);
     }
 
-    // Monthly reset check
-    const monthlyReset = new Date(credits.monthly_reset_timestamp);
-    const daysSinceMonthlyReset = (now.getTime() - monthlyReset.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSinceMonthlyReset >= 30) {
-      credits.monthly_bonus_used = 0;
-      credits.monthly_reset_timestamp = now.toISOString();
-      await adminClient.from("user_credits")
-        .update({ monthly_bonus_used: 0, monthly_reset_timestamp: now.toISOString() })
-        .eq("user_id", userId);
-    }
-
     const cost = getCreditCost(message.length);
     const isProTone = !FREE_TONES.includes(tone);
 
     // 6. Credit checks (skip for Pro users)
     if (!credits.is_pro) {
-      if (isProTone) {
-        if (credits.monthly_bonus_used + cost > MONTHLY_BONUS_LIMIT) {
-          return new Response(
-            JSON.stringify({ 
-              error: "Pro tone bonus exhausted. Upgrade to Pro.",
-              requiresUpgrade: true,
-              type: "monthly_bonus"
-            }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      } else {
-        if (credits.daily_credits_used + cost > DAILY_CREDIT_LIMIT) {
-          return new Response(
-            JSON.stringify({ 
-              error: "Daily credits exhausted. Upgrade to Pro.",
-              requiresUpgrade: true,
-              type: "daily_limit"
-            }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      if (credits.daily_credits_used + cost > DAILY_CREDIT_LIMIT) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Daily credits exhausted. Upgrade to Pro.",
+            requiresUpgrade: true,
+            type: "daily_limit"
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
     // 7. Deduct credits BEFORE calling AI
     if (!credits.is_pro) {
-      if (isProTone) {
-        await adminClient.from("user_credits")
-          .update({ monthly_bonus_used: credits.monthly_bonus_used + cost })
-          .eq("user_id", userId);
-      } else {
-        await adminClient.from("user_credits")
-          .update({ daily_credits_used: credits.daily_credits_used + cost })
-          .eq("user_id", userId);
-      }
+      await adminClient.from("user_credits")
+        .update({ daily_credits_used: credits.daily_credits_used + cost })
+        .eq("user_id", userId);
     }
 
     // 8. Log request
@@ -206,15 +174,9 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       // Refund credits
       if (!credits.is_pro) {
-        if (isProTone) {
-          await adminClient.from("user_credits")
-            .update({ monthly_bonus_used: credits.monthly_bonus_used })
-            .eq("user_id", userId);
-        } else {
-          await adminClient.from("user_credits")
-            .update({ daily_credits_used: credits.daily_credits_used })
-            .eq("user_id", userId);
-        }
+        await adminClient.from("user_credits")
+          .update({ daily_credits_used: credits.daily_credits_used })
+          .eq("user_id", userId);
       }
       return new Response(
         JSON.stringify({ error: "AI service not configured." }),
@@ -241,15 +203,9 @@ serve(async (req) => {
     if (!aiResponse.ok) {
       // Refund credits on AI failure
       if (!credits.is_pro) {
-        if (isProTone) {
-          await adminClient.from("user_credits")
-            .update({ monthly_bonus_used: credits.monthly_bonus_used })
-            .eq("user_id", userId);
-        } else {
-          await adminClient.from("user_credits")
-            .update({ daily_credits_used: credits.daily_credits_used })
-            .eq("user_id", userId);
-        }
+        await adminClient.from("user_credits")
+          .update({ daily_credits_used: credits.daily_credits_used })
+          .eq("user_id", userId);
       }
 
       if (aiResponse.status === 429) {
@@ -279,15 +235,9 @@ serve(async (req) => {
     if (!fixedMessage) {
       // Refund
       if (!credits.is_pro) {
-        if (isProTone) {
-          await adminClient.from("user_credits")
-            .update({ monthly_bonus_used: credits.monthly_bonus_used })
-            .eq("user_id", userId);
-        } else {
-          await adminClient.from("user_credits")
-            .update({ daily_credits_used: credits.daily_credits_used })
-            .eq("user_id", userId);
-        }
+        await adminClient.from("user_credits")
+          .update({ daily_credits_used: credits.daily_credits_used })
+          .eq("user_id", userId);
       }
       return new Response(
         JSON.stringify({ error: "No response from AI." }),
@@ -296,18 +246,16 @@ serve(async (req) => {
     }
 
     // 10. Return result
-    const newDailyUsed = isProTone ? credits.daily_credits_used : credits.daily_credits_used + cost;
-    const newMonthlyUsed = isProTone ? credits.monthly_bonus_used + cost : credits.monthly_bonus_used;
+    const newDailyUsed = credits.is_pro ? 0 : credits.daily_credits_used + cost;
 
     return new Response(
       JSON.stringify({
         fixedMessage,
         creditCost: cost,
-        dailyCreditsUsed: credits.is_pro ? 0 : newDailyUsed,
+        dailyCreditsUsed: newDailyUsed,
         dailyCreditsRemaining: credits.is_pro ? "unlimited" : Math.max(0, DAILY_CREDIT_LIMIT - newDailyUsed),
-        monthlyBonusUsed: credits.is_pro ? 0 : newMonthlyUsed,
-        monthlyBonusRemaining: credits.is_pro ? "unlimited" : Math.max(0, MONTHLY_BONUS_LIMIT - newMonthlyUsed),
         isPro: credits.is_pro,
+        isProTone,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -1,45 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  RefreshCw, 
-  Wand2, 
-  Palette, 
-  Languages, 
-  Sparkles, 
-  Eye 
-} from "lucide-react";
+import { Zap, Theater, Smartphone, Lock, CreditCard, Globe } from "lucide-react";
 
 const features = [
-  {
-    icon: RefreshCw,
-    title: "Fix Awkward Messages",
-    description: "Paste what you wrote and get a version that sounds natural and confident.",
-  },
-  {
-    icon: Wand2,
-    title: "Avoid Embarrassment",
-    description: "Catch risky phrasing before you hit send. Say what you mean, the right way.",
-  },
-  {
-    icon: Palette,
-    title: "Match Any Situation",
-    description: "Reply to your boss, your crush, or a tough conversation — always sound right.",
-  },
-  {
-    icon: Languages,
-    title: "Works in Any Language",
-    description: "Write in English, get output in Spanish, Hindi, or any of 20+ languages.",
-  },
-  {
-    icon: Sparkles,
-    title: "Sound Polished",
-    description: "Fix grammar, enhance vocabulary, and make your messages sound professional.",
-  },
-  {
-    icon: Eye,
-    title: "Get It Right the First Time",
-    description: "No more re-reading, second-guessing, or accidental tone disasters.",
-  },
+  { icon: Zap, title: "Instant tone switching", description: "Switch between 14 tones in one click." },
+  { icon: Theater, title: "14 unique tones", description: "Including Rizz, Savage, Confident, and more." },
+  { icon: Smartphone, title: "Built perfectly for mobile", description: "Fix messages on the go, anywhere." },
+  { icon: Lock, title: "Messages never stored", description: "Your messages are processed and forgotten." },
+  { icon: CreditCard, title: "Free forever plan", description: "30 credits daily, always free. No catches." },
+  { icon: Globe, title: "Loved by students across India", description: "Trusted by thousands of students daily." },
 ];
 
 export function Features() {
@@ -58,8 +27,8 @@ export function Features() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <Card 
-              key={feature.title} 
+            <Card
+              key={feature.title}
               className="p-6 glass hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 group"
               style={{ animationDelay: `${index * 0.1}s` }}
             >

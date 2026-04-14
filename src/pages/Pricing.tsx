@@ -6,25 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/hooks/useAuth";
-import { Check, X, Crown, Zap, Sparkles, Lock, Star } from "lucide-react";
+import { PRICING } from "@/lib/constants";
+import { Check, X, Crown, Zap, Sparkles, Star, Lock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const freeFeatures = [
-  { text: "5 message fixes per day", included: true },
-  { text: "3 tone styles (Polite, Professional, Friendly)", included: true },
-  { text: "3 languages (English, Hindi, Bengali)", included: true },
+  { text: "30 credits per day", included: true },
+  { text: "3 tones: Polite, Professional, Friendly", included: true },
+  { text: "Watermark on output", included: true },
   { text: "Standard processing speed", included: true },
-  { text: "Premium tones (Savage, Flirty, Confident...)", included: false },
-  { text: "All 20+ languages", included: false },
-  { text: "Message history", included: false },
+  { text: "All 14 tone styles", included: false },
+  { text: "Unlimited message fixes", included: false },
+  { text: "No watermark", included: false },
   { text: "Priority processing", included: false },
 ];
 
 const proFeatures = [
   { text: "Unlimited message fixes", included: true },
-  { text: "All tone styles (Savage, Flirty, Confident, etc.)", included: true },
-  { text: "All 20+ languages", included: true },
+  { text: "All 14 tones unlocked", included: true },
+  { text: "No watermark", included: true },
   { text: "Faster AI responses", included: true },
-  { text: "Message history", included: true },
   { text: "Priority processing", included: true },
 ];
 
@@ -32,13 +33,6 @@ export default function PricingPage() {
   const { profile } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
   const [showComingSoon, setShowComingSoon] = useState(false);
-
-  const pricing = {
-    monthly: { amount: 3.99, period: "month" },
-    yearly: { amount: 39, period: "year", monthlyEquiv: 3.25 },
-  };
-
-  const currentPricing = pricing[billingPeriod];
 
   return (
     <div className="min-h-screen gradient-subtle">
@@ -55,6 +49,16 @@ export default function PricingPage() {
             <p className="text-lg text-muted-foreground">
               Start free. Upgrade when you need more.
             </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-sm text-muted-foreground mt-2 underline decoration-dotted cursor-help inline-block">
+                  1 credit = 1 message fix
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Each message fix costs 1 credit (up to 100 chars), 2 credits (101-200 chars), or 3 credits (201-300 chars).</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Billing Toggle */}
@@ -91,8 +95,8 @@ export default function PricingPage() {
           </div>
 
           {/* Pricing Cards */}
-          <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Free Plan */}
               <Card className="glass relative">
                 <CardHeader>
@@ -101,20 +105,21 @@ export default function PricingPage() {
                     <Zap className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold">$0</span>
+                    <span className="text-4xl font-bold">₹0</span>
+                    <span className="text-muted-foreground ml-1">forever</span>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {freeFeatures.map((feature) => (
-                      <li key={feature.text} className={`flex items-center gap-3 ${!feature.included ? "text-muted-foreground" : ""}`}>
-                        {feature.included ? (
+                    {freeFeatures.map((f) => (
+                      <li key={f.text} className={`flex items-center gap-3 ${!f.included ? "text-muted-foreground" : ""}`}>
+                        {f.included ? (
                           <Check className="h-5 w-5 text-primary shrink-0" />
                         ) : (
                           <X className="h-5 w-5 opacity-30 shrink-0" />
                         )}
-                        <span className={!feature.included ? "line-through opacity-60" : ""}>{feature.text}</span>
-                        {!feature.included && <Lock className="h-3 w-3 ml-auto opacity-30" />}
+                        <span className={!f.included ? "line-through opacity-60" : ""}>{f.text}</span>
+                        {!f.included && <Lock className="h-3 w-3 ml-auto opacity-30" />}
                       </li>
                     ))}
                   </ul>
@@ -124,68 +129,169 @@ export default function PricingPage() {
                 </CardContent>
               </Card>
 
-              {/* Pro Plan */}
-              <Card className="glass-strong border-primary/50 relative overflow-hidden">
-                {/* Popular Badge */}
-                <div className="absolute top-0 right-0">
-                  <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
-                    <Star className="h-3 w-3" />
-                    MOST POPULAR
+              {/* Pro Monthly / Yearly */}
+              {billingPeriod === "monthly" ? (
+                <Card className="glass-strong border-primary/50 relative overflow-hidden">
+                  <div className="absolute top-0 right-0">
+                    <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
+                      <Star className="h-3 w-3" />
+                      POPULAR
+                    </div>
                   </div>
-                </div>
-                
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-2">
+                      <CardTitle className="text-2xl flex items-center gap-2">
+                        Pro <Crown className="h-5 w-5 text-primary" />
+                      </CardTitle>
+                      <Sparkles className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="mt-4 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">🇮🇳</span>
+                        <span className="text-3xl font-bold">₹{PRICING.india.monthly.amount}</span>
+                        <span className="text-muted-foreground">/month</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">🌍</span>
+                        <span className="text-lg font-semibold">${PRICING.global.monthly.amount}</span>
+                        <span className="text-muted-foreground text-sm">/month</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {proFeatures.map((f) => (
+                        <li key={f.text} className="flex items-center gap-3">
+                          <Check className="h-5 w-5 text-primary shrink-0" />
+                          <span>{f.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      variant="hero"
+                      className="w-full mt-6"
+                      disabled={profile?.is_pro}
+                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
+                    >
+                      {profile?.is_pro ? <><Crown className="h-4 w-4 mr-2" />Current Plan</> : "Upgrade to Pro"}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-3">Cancel anytime. No questions asked.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="glass-strong border-primary/50 relative overflow-hidden">
+                  <div className="absolute top-0 right-0">
+                    <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
+                      <Star className="h-3 w-3" />
+                      POPULAR
+                    </div>
+                  </div>
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-2">
+                      <CardTitle className="text-2xl flex items-center gap-2">
+                        Pro <Crown className="h-5 w-5 text-primary" />
+                      </CardTitle>
+                      <Sparkles className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="mt-4 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">🇮🇳</span>
+                        <span className="text-3xl font-bold">₹{PRICING.india.yearly.amount}</span>
+                        <span className="text-muted-foreground">/year</span>
+                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">Save {PRICING.india.yearly.save}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">🌍</span>
+                        <span className="text-lg font-semibold">${PRICING.global.yearly.amount}</span>
+                        <span className="text-muted-foreground text-sm">/year</span>
+                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">Save {PRICING.global.yearly.save}</Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {proFeatures.map((f) => (
+                        <li key={f.text} className="flex items-center gap-3">
+                          <Check className="h-5 w-5 text-primary shrink-0" />
+                          <span>{f.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      variant="hero"
+                      className="w-full mt-6"
+                      disabled={profile?.is_pro}
+                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
+                    >
+                      {profile?.is_pro ? <><Crown className="h-4 w-4 mr-2" />Current Plan</> : "Get Best Value"}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-3">Cancel anytime. No questions asked.</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Pro Yearly when monthly selected, or vice versa */}
+              <Card className={`glass relative ${billingPeriod === "yearly" ? "border-amber-500/30" : ""}`}>
+                {billingPeriod === "yearly" && (
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      🔥 Best Value
+                    </div>
+                  </div>
+                )}
                 <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <CardTitle className="text-2xl flex items-center gap-2">
-                      Pro
-                      <Crown className="h-5 w-5 text-primary" />
-                    </CardTitle>
-                    <Sparkles className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="mt-4">
-                    {billingPeriod === "yearly" ? (
-                      <div>
-                        <span className="text-4xl font-bold">${pricing.yearly.amount}</span>
-                        <span className="text-muted-foreground"> / year</span>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          That's just ${pricing.yearly.monthlyEquiv}/month
-                        </p>
-                      </div>
+                  <CardTitle className="text-2xl">
+                    {billingPeriod === "monthly" ? "Pro Yearly" : "Pro Monthly"}
+                  </CardTitle>
+                  <div className="mt-4 space-y-1">
+                    {billingPeriod === "monthly" ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🇮🇳</span>
+                          <span className="text-2xl font-bold">₹{PRICING.india.yearly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/year</span>
+                          <Badge variant="outline" className="text-xs">Save {PRICING.india.yearly.save}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🌍</span>
+                          <span className="text-lg font-semibold">${PRICING.global.yearly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/year</span>
+                          <Badge variant="outline" className="text-xs">Save {PRICING.global.yearly.save}</Badge>
+                        </div>
+                      </>
                     ) : (
-                      <div>
-                        <span className="text-4xl font-bold">${pricing.monthly.amount}</span>
-                        <span className="text-muted-foreground"> / month</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🇮🇳</span>
+                          <span className="text-2xl font-bold">₹{PRICING.india.monthly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/month</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🌍</span>
+                          <span className="text-lg font-semibold">${PRICING.global.monthly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/month</span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {proFeatures.map((feature) => (
-                      <li key={feature.text} className="flex items-center gap-3">
+                    {proFeatures.map((f) => (
+                      <li key={f.text} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-primary shrink-0" />
-                        <span>{feature.text}</span>
+                        <span>{f.text}</span>
                       </li>
                     ))}
                   </ul>
-                  <Button 
-                    variant="hero" 
-                    className="w-full mt-6" 
+                  <Button
+                    variant="outline"
+                    className="w-full mt-6"
                     disabled={profile?.is_pro}
                     onClick={() => !profile?.is_pro && setShowComingSoon(true)}
                   >
-                    {profile?.is_pro ? (
-                      <>
-                        <Crown className="h-4 w-4 mr-2" />
-                        Current Plan
-                      </>
-                    ) : (
-                      "Upgrade to Pro"
-                    )}
+                    {billingPeriod === "monthly" ? "Get Best Value" : "Upgrade to Pro"}
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground mt-3">
-                    Cancel anytime. No questions asked.
-                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -216,12 +322,20 @@ export default function PricingPage() {
             <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
             <div className="space-y-6">
               <div className="glass rounded-xl p-6">
-                <h3 className="font-semibold mb-2">What happens when I hit my daily limit?</h3>
-                <p className="text-muted-foreground">You'll see an upgrade prompt. Your fixes reset every 24 hours, or you can upgrade to Pro for unlimited access.</p>
+                <h3 className="font-semibold mb-2">Do credits roll over to the next day?</h3>
+                <p className="text-muted-foreground">No. Daily credits reset every 24 hours.</p>
               </div>
               <div className="glass rounded-xl p-6">
-                <h3 className="font-semibold mb-2">What's included in the free plan?</h3>
-                <p className="text-muted-foreground">5 message fixes per day, 3 tone styles (Polite, Professional, Friendly), and 3 languages (English, Hindi, Bengali).</p>
+                <h3 className="font-semibold mb-2">Can I try Pro tones for free?</h3>
+                <p className="text-muted-foreground">You can click any Pro tone and see your rewrite is ready — upgrade to reveal the full output.</p>
+              </div>
+              <div className="glass rounded-xl p-6">
+                <h3 className="font-semibold mb-2">What is 1 credit?</h3>
+                <p className="text-muted-foreground">1 credit = 1 message fix (up to 100 characters). Longer messages cost 2-3 credits.</p>
+              </div>
+              <div className="glass rounded-xl p-6">
+                <h3 className="font-semibold mb-2">Is there a free plan forever?</h3>
+                <p className="text-muted-foreground">Yes. 30 credits daily, always free. No credit card needed.</p>
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
