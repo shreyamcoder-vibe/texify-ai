@@ -11,7 +11,7 @@ export function CTA() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 backdrop-blur mb-8">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
-            <span className="text-sm font-medium text-primary-foreground">Free to start</span>
+            <span className="text-sm font-medium text-primary-foreground">Free to start · 30 credits/day</span>
           </div>
           
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
@@ -19,8 +19,7 @@ export function CTA() {
           </h2>
           
           <p className="text-lg text-primary-foreground/80 mb-10">
-            Fix awkward, rude, or risky messages before they go out. 
-            Start with 5 free fixes today.
+            Fix awkward, rude, or risky messages before they go out. Start with 30 free credits today.
           </p>
           
           <Button 

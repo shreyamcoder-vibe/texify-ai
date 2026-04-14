@@ -1,11 +1,25 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Sparkles, ArrowRight, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Hero() {
+  const [messageCount, setMessageCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("requests_log" as any)
+        .select("*", { count: "exact", head: true });
+      setMessageCount(count ?? 0);
+    };
+    fetchCount();
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background Effects */}
       <div className="absolute inset-0 gradient-subtle" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-slow" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-foreground/20 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: "2s" }} />
@@ -15,19 +29,19 @@ export function Hero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 animate-fade-in">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">AI-Powered Message Transformation</span>
+            <span className="text-sm font-medium">AI-Powered Message Fixer</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up">
-            Fix your message
+            Say exactly what you mean.
             <br />
-            <span className="gradient-text">before you send it.</span>
+            <span className="gradient-text">Every time.</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Don't overthink your replies. Paste your message and let Texify rewrite it to sound polite, confident, professional, calm, or charming — in one click.
+            AI that rewrites your messages in any tone — Rizz, Savage, Professional, Polite and 10+ more — in one click.
           </p>
 
           {/* CTA Buttons */}
@@ -35,7 +49,7 @@ export function Hero() {
             <Button variant="hero" size="xl" asChild className="group">
               <Link to="/app">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Fix My Message
+                Start Free — 30 credits/day
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -47,19 +61,49 @@ export function Hero() {
           </div>
 
           {/* Trust Badges */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span>5 free rewrites/day</span>
+              <span>No credit card needed</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span>14+ tone styles</span>
+              <span>30 free credits daily</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span>20+ languages</span>
+              <span>Pro tones from ₹49/month</span>
             </div>
+          </div>
+
+          {/* Live Counter */}
+          {messageCount !== null && messageCount > 0 && (
+            <div className="mt-6 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-bold text-foreground">{messageCount.toLocaleString()}</span> messages fixed so far
+              </p>
+            </div>
+          )}
+
+          {/* Before/After Example */}
+          <div className="mt-14 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.3s" }}>
+            <Card className="glass-strong p-0 overflow-hidden">
+              {/* Before */}
+              <div className="p-4 border-b border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Before</p>
+                <p className="text-base text-muted-foreground italic">"hey can u send the notes"</p>
+              </div>
+              {/* After - Professional */}
+              <div className="p-4 border-l-4 border-l-primary bg-primary/5 border-b border-border/50">
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">After — Professional 💼</p>
+                <p className="text-base">"Hi, could you please share today's notes when you get a chance? Thanks!"</p>
+              </div>
+              {/* After - Rizz */}
+              <div className="p-4 border-l-4 border-l-amber-500 bg-amber-500/5">
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">After — Rizz 😏</p>
+                <p className="text-base">"You seem like someone who actually pays attention in class 👀 notes?"</p>
+              </div>
+            </Card>
           </div>
         </div>
       </div>

@@ -40,9 +40,8 @@ export const LANGUAGES = [
   { value: "sv", label: "Swedish (Svenska)", free: false },
 ] as const;
 
-export const DAILY_CREDIT_LIMIT = 100;
-export const MONTHLY_BONUS_LIMIT = 300;
-export const FREE_DAILY_LIMIT = DAILY_CREDIT_LIMIT; // alias for backward compat
+export const DAILY_CREDIT_LIMIT = 30;
+export const FREE_DAILY_LIMIT = DAILY_CREDIT_LIMIT;
 
 export const FREE_TONES: string[] = TONES.filter(t => t.free).map(t => t.value);
 export const FREE_LANGUAGES: string[] = LANGUAGES.filter(l => l.free).map(l => l.value);
