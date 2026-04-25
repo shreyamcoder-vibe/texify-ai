@@ -185,6 +185,12 @@ serve(async (req) => {
     }
 
     const systemPrompt = TONE_PROMPTS[tone];
+    // Free tones: ask for 3 distinct variations. Pro tones: 1 result (will be blurred for free users).
+    const wantVariations = !isProTone;
+    const userPrompt = wantVariations
+      ? `${message}\n\nReturn EXACTLY 3 distinct rewrites of the message above, each on its own line, separated by the literal delimiter "|||". No numbering, no labels, no extra text — just three rewrites separated by |||.`
+      : message;
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -195,7 +201,7 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message },
+          { role: "user", content: userPrompt },
         ],
       }),
     });
