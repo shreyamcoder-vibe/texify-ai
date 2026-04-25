@@ -190,15 +190,12 @@ export default function AppPage() {
             </div>
           )}
 
-          {/* Quick Fix Buttons */}
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Quick Fix</p>
-            <QuickToneButtons
-              onSelectTone={handleToneSelect}
-              isToneLocked={(tone) => !isPro && isProTone(tone)}
-              selectedTone={selectedTone}
-              disabled={isLoading}
-            />
+          {/* Hero Heading */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 gradient-text">Fix your Message</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Paste what you're about to send. Pick a tone. Send with confidence.
+            </p>
           </div>
 
           {/* Tone Cards (horizontal scroll) */}
