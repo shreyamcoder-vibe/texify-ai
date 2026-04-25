@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+
 import { Sparkles, ArrowRight, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,7 +49,7 @@ export function Hero() {
             <Button variant="hero" size="xl" asChild className="group">
               <Link to="/app">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Start Free — 30 credits/day
+                Get Started For Free
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -85,26 +85,6 @@ export function Hero() {
             </div>
           )}
 
-          {/* Before/After Example */}
-          <div className="mt-14 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.3s" }}>
-            <Card className="glass-strong p-0 overflow-hidden">
-              {/* Before */}
-              <div className="p-4 border-b border-border/50">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Before</p>
-                <p className="text-base text-muted-foreground italic">"hey can u send the notes"</p>
-              </div>
-              {/* After - Professional */}
-              <div className="p-4 border-l-4 border-l-primary bg-primary/5 border-b border-border/50">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">After — Professional 💼</p>
-                <p className="text-base">"Hi, could you please share today's notes when you get a chance? Thanks!"</p>
-              </div>
-              {/* After - Rizz */}
-              <div className="p-4 border-l-4 border-l-amber-500 bg-amber-500/5">
-                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">After — Rizz 😏</p>
-                <p className="text-base">"You seem like someone who actually pays attention in class 👀 notes?"</p>
-              </div>
-            </Card>
-          </div>
         </div>
       </div>
     </section>

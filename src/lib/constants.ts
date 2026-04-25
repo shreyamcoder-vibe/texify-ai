@@ -48,5 +48,5 @@ export const FREE_LANGUAGES: string[] = LANGUAGES.filter(l => l.free).map(l => l
 
 export const PRICING = {
   india: { monthly: { amount: 49, currency: "₹" }, yearly: { amount: 399, currency: "₹", save: "32%" } },
-  global: { monthly: { amount: 3.99, currency: "$" }, yearly: { amount: 39, currency: "$", save: "18%" } },
+  global: { monthly: { amount: 3.99, currency: "$" }, yearly: { amount: 39, currency: "$", save: "32%" } },
 } as const;
