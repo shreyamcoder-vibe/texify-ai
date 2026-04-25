@@ -48,7 +48,7 @@ export function Navbar() {
                   </div>
                 ) : (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
-                    <span>Free Credits: {profile?.daily_credits_used ?? 0}/30 used today</span>
+                    <span>Credits Left: {Math.max(0, 30 - (profile?.daily_credits_used ?? 0))}/30</span>
                   </div>
                 )}
                 <Button variant="ghost" asChild>
