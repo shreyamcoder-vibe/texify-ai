@@ -49,7 +49,7 @@ export function Hero() {
             <Button variant="hero" size="xl" asChild className="group">
               <Link to="/app">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Start Free — 30 credits/day
+                Get Started For Free
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
