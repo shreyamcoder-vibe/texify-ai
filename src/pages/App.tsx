@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
+import { QuickToneButtons } from "@/components/app/QuickToneButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ import {
 
 interface FixResult {
   fixedMessage: string;
+  variations?: string[];
   creditCost: number;
   dailyCreditsUsed: number;
   dailyCreditsRemaining: number | string;
@@ -28,7 +30,7 @@ interface UserCredits {
 }
 
 export default function AppPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -36,7 +38,7 @@ export default function AppPage() {
   const [selectedTone, setSelectedTone] = useState("professional");
   const [result, setResult] = useState<FixResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showLimitReached, setShowLimitReached] = useState(false);
   const [showBlurUpgrade, setShowBlurUpgrade] = useState(false);
   const [blurredToneName, setBlurredToneName] = useState("");
@@ -104,7 +106,6 @@ export default function AppPage() {
       setResult(data);
       setCooldown(3);
 
-      // If pro tone used by free user → show blurred
       if (data.isProTone && !data.isPro) {
         const toneObj = TONES.find(t => t.value === selectedTone);
         setBlurredToneName(toneObj?.label ?? selectedTone);
@@ -116,6 +117,7 @@ export default function AppPage() {
           ...prev,
           daily_credits_used: data.dailyCreditsUsed,
         } : prev);
+        refreshProfile();
       }
     } catch (error) {
       console.error("Fix error:", error);
@@ -129,11 +131,11 @@ export default function AppPage() {
     }
   };
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, index: number) => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast({ title: "Copied to clipboard" });
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedIndex(index);
+    toast({ title: "Copied to clipboard." });
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   if (authLoading) {
@@ -149,6 +151,21 @@ export default function AppPage() {
   const charCount = inputText.length;
   const isOutputBlurred = showBlurUpgrade && result?.isProTone && !isPro;
 
+  // Partial blur: show first 5 chars readable, blur the rest
+  const renderPartialBlur = (text: string) => {
+    const visible = text.slice(0, 5);
+    const hidden = text.slice(5);
+    return (
+      <>
+        <span>{visible}</span>
+        <span className="blur-[8px] select-none">{hidden}</span>
+      </>
+    );
+  };
+
+  const variations = result?.variations && result.variations.length > 0 ? result.variations : (result ? [result.fixedMessage] : []);
+  const showThreeVariations = result && !result.isProTone && variations.length > 1;
+
   return (
     <div className="min-h-screen gradient-subtle">
       <Navbar />
@@ -158,7 +175,7 @@ export default function AppPage() {
           {!isPro && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm">
-                <span className="font-medium">{dailyRemaining} credits left today</span>
+                <span className="font-medium">Free Credits: {(credits?.daily_credits_used ?? 0)}/30 used today</span>
               </div>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/pricing"><Crown className="h-4 w-4 mr-1.5" />Upgrade to Pro</Link>
@@ -173,9 +190,24 @@ export default function AppPage() {
             </div>
           )}
 
-          {/* Tone Cards */}
+          {/* Quick Fix Buttons */}
           <div className="mb-4">
-            <div className="flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 scrollbar-hide">
+            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Quick Fix</p>
+            <QuickToneButtons
+              onSelectTone={handleToneSelect}
+              isToneLocked={(tone) => !isPro && isProTone(tone)}
+              selectedTone={selectedTone}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Tone Cards (horizontal scroll) */}
+          <div className="mb-4">
+            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">All Tones</p>
+            <div
+              className="flex overflow-x-auto gap-[10px] py-2 scrollbar-hide -mx-4"
+              style={{ paddingLeft: "16px", paddingRight: "16px", scrollPaddingLeft: "16px", scrollPaddingRight: "16px" }}
+            >
               {TONES.map(tone => {
                 const proTone = !isPro && isProTone(tone.value);
                 const selected = selectedTone === tone.value;
@@ -183,23 +215,22 @@ export default function AppPage() {
                   <button
                     key={tone.value}
                     onClick={() => handleToneSelect(tone.value)}
-                    className={`flex-shrink-0 px-3 py-2 rounded-lg border text-left transition-all min-w-[140px] ${
+                    className={`relative flex-shrink-0 px-3 py-2.5 rounded-lg border text-left transition-all min-w-[140px] ${
                       selected
-                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/30"
                         : "border-border/50 bg-card/50 hover:border-primary/30"
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    {proTone && (
+                      <div className="absolute top-1.5 right-1.5">
+                        <Lock className="h-3 w-3 text-amber-500" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 mb-0.5 pr-4">
                       <span className="text-sm">{tone.emoji}</span>
                       <span className="text-xs font-semibold truncate">{tone.label}</span>
-                      {proTone && (
-                        <Lock className="h-3 w-3 ml-auto text-amber-500" />
-                      )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground leading-tight">{tone.description}</p>
-                    {proTone && (
-                      <p className="text-[9px] text-amber-600 mt-0.5">Pro tone · output blurred</p>
-                    )}
+                    <p className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{tone.description}</p>
                   </button>
                 );
               })}
@@ -256,6 +287,7 @@ export default function AppPage() {
                 </div>
               </div>
 
+              {/* Main output */}
               <Card className="glass-strong border-primary/30 relative overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -266,22 +298,22 @@ export default function AppPage() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => copyToClipboard(result.fixedMessage)}
+                        onClick={() => copyToClipboard(variations[0], 0)}
                         className="h-9 px-4 min-h-[44px]"
                       >
-                        {copied ? <><Check className="h-4 w-4 mr-1.5" />Copied!</> : <><Copy className="h-4 w-4 mr-1.5" />Copy Text</>}
+                        {copiedIndex === 0 ? <><Check className="h-4 w-4 mr-1.5" />Copied!</> : <><Copy className="h-4 w-4 mr-1.5" />Copy Text</>}
                       </Button>
                     )}
                   </div>
-                  <p className={`text-lg leading-relaxed transition-all ${isOutputBlurred ? "blur-[6px] select-none" : ""}`}>
-                    {result.fixedMessage}
+                  <p className="text-lg leading-relaxed">
+                    {isOutputBlurred ? renderPartialBlur(variations[0]) : variations[0]}
                   </p>
 
-                  {/* Blurred overlay for Pro tones */}
+                  {/* Blurred overlay for Pro tones — positioned over blurred portion */}
                   {isOutputBlurred && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-lg p-6">
-                      <p className="text-lg font-bold mb-1">🔥 Your {blurredToneName} rewrite is ready</p>
-                      <p className="text-sm text-muted-foreground mb-4">Upgrade to Pro to reveal it</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/70 backdrop-blur-[1px] rounded-lg p-6">
+                      <p className="text-lg font-bold mb-1 text-center">🔥 Your {blurredToneName} rewrite is ready</p>
+                      <p className="text-sm text-muted-foreground mb-4 text-center">Upgrade to Pro to reveal it</p>
                       <Button variant="hero" className="w-full max-w-xs min-h-[44px]" asChild>
                         <Link to="/pricing"><Crown className="h-4 w-4 mr-2" />Upgrade to Pro →</Link>
                       </Button>
@@ -299,6 +331,38 @@ export default function AppPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Alternative variations (free tones only) */}
+              {showThreeVariations && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {variations.slice(1, 3).map((variant, idx) => {
+                    const realIdx = idx + 1;
+                    return (
+                      <Card key={realIdx} className="glass border-border/50">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                              Option {realIdx + 1}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(variant, realIdx)}
+                              className="h-7 px-2 text-xs"
+                            >
+                              {copiedIndex === realIdx ? <><Check className="h-3 w-3 mr-1" />Copied</> : <><Copy className="h-3 w-3 mr-1" />Copy</>}
+                            </Button>
+                          </div>
+                          <p className="text-sm leading-relaxed">{variant}</p>
+                          {!isPro && (
+                            <p className="text-[10px] text-muted-foreground mt-2 text-right">— Texify AI</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="flex justify-center pt-4">
                 <Button variant="outline" onClick={() => { setResult(null); setInputText(""); setShowBlurUpgrade(false); }}>
