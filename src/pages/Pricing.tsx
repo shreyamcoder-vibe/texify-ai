@@ -22,32 +22,35 @@ const freeFeatures = [
 ];
 
 const proFeatures = [
-  { text: "Unlimited message fixes", included: true },
-  { text: "All 14 tones unlocked", included: true },
-  { text: "No watermark", included: true },
-  { text: "Faster AI responses", included: true },
-  { text: "Priority processing", included: true },
+  "Unlimited message fixes",
+  "All 14 tones unlocked",
+  "No watermark",
+  "Faster AI responses",
+  "Priority processing",
 ];
 
 export default function PricingPage() {
   const { profile } = useAuth();
+  // Default: yearly selected on open
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
   const [showComingSoon, setShowComingSoon] = useState(false);
+
+  const isYearly = billingPeriod === "yearly";
 
   return (
     <div className="min-h-screen gradient-subtle">
       <Navbar />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4">Pricing</Badge>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
               Simple <span className="gradient-text">pricing</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Start free. Upgrade when you need more.
+              {isYearly ? "Save 32% with yearly billing" : "Flexible monthly billing"}
             </p>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -67,7 +70,7 @@ export default function PricingPage() {
               <button
                 onClick={() => setBillingPeriod("monthly")}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                  billingPeriod === "monthly"
+                  !isYearly
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -77,27 +80,27 @@ export default function PricingPage() {
               <button
                 onClick={() => setBillingPeriod("yearly")}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                  billingPeriod === "yearly"
+                  isYearly
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Yearly
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  billingPeriod === "yearly"
+                  isYearly
                     ? "bg-primary-foreground/20 text-primary-foreground"
                     : "bg-primary/10 text-primary"
                 }`}>
-                  Save 18%
+                  Save 32%
                 </span>
               </button>
             </div>
           </div>
 
-          {/* Pricing Cards */}
-          <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* LEFT — Free (always) */}
+          {/* Pricing Cards — Always 2 columns */}
+          <div className="max-w-3xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Column 1 — Free */}
               <Card className="glass relative">
                 <CardHeader>
                   <div className="flex items-center justify-between mb-2">
@@ -129,188 +132,78 @@ export default function PricingPage() {
                 </CardContent>
               </Card>
 
-              {/* MIDDLE — POPULAR (Pro when monthly, Pro Yearly when yearly) */}
-              {billingPeriod === "monthly" ? (
-                <Card className="glass-strong border-primary/50 relative overflow-hidden">
-                  <div className="absolute top-0 right-0">
-                    <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
-                      <Star className="h-3 w-3" />
-                      POPULAR
-                    </div>
+              {/* Column 2 — Pro (Monthly OR Yearly based on toggle) */}
+              <Card className="glass-strong border-primary/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0">
+                  <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
+                    {isYearly ? (
+                      <>🔥 Best Value</>
+                    ) : (
+                      <><Star className="h-3 w-3" /> Most Popular ⭐</>
+                    )}
                   </div>
-                  <CardHeader>
-                    <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="text-2xl flex items-center gap-2">
-                        Pro <Crown className="h-5 w-5 text-primary" />
-                      </CardTitle>
-                      <Sparkles className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="mt-4 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🇮🇳</span>
-                        <span className="text-3xl font-bold">₹{PRICING.india.monthly.amount}</span>
-                        <span className="text-muted-foreground">/month</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🌍</span>
-                        <span className="text-lg font-semibold">${PRICING.global.monthly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/month</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {proFeatures.map((f) => (
-                        <li key={f.text} className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-primary shrink-0" />
-                          <span>{f.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      variant="hero"
-                      className="w-full mt-6"
-                      disabled={profile?.is_pro}
-                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
-                    >
-                      {profile?.is_pro ? <><Crown className="h-4 w-4 mr-2" />Current Plan</> : "Upgrade to Pro"}
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground mt-3">Cancel anytime. No questions asked.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="glass-strong border-primary/50 relative overflow-hidden">
-                  <div className="absolute top-0 right-0">
-                    <div className="gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-lg flex items-center gap-1">
-                      <Star className="h-3 w-3" />
-                      POPULAR
-                    </div>
+                </div>
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      Pro <Crown className="h-5 w-5 text-primary" />
+                    </CardTitle>
+                    <Sparkles className="h-6 w-6 text-primary" />
                   </div>
-                  <CardHeader>
-                    <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="text-2xl flex items-center gap-2">
-                        Pro Yearly <Crown className="h-5 w-5 text-primary" />
-                      </CardTitle>
-                      <Sparkles className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="mt-4 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🇮🇳</span>
-                        <span className="text-3xl font-bold">₹{PRICING.india.yearly.amount}</span>
-                        <span className="text-muted-foreground">/year</span>
-                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">Save {PRICING.india.yearly.save}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🌍</span>
-                        <span className="text-lg font-semibold">${PRICING.global.yearly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/year</span>
-                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary">Save {PRICING.global.yearly.save}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {proFeatures.map((f) => (
-                        <li key={f.text} className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-primary shrink-0" />
-                          <span>{f.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      variant="hero"
-                      className="w-full mt-6"
-                      disabled={profile?.is_pro}
-                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
-                    >
-                      {profile?.is_pro ? <><Crown className="h-4 w-4 mr-2" />Current Plan</> : "Get Best Value"}
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground mt-3">Cancel anytime. No questions asked.</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* RIGHT — Pro Yearly when monthly toggle (Best Value), Pro Monthly when yearly toggle (no badge) */}
-              {billingPeriod === "monthly" ? (
-                <Card className="glass relative border-amber-500/30 overflow-hidden">
-                  <div className="absolute top-0 right-0">
-                    <div className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                      🔥 Best Value
-                    </div>
+                  <div className="mt-4 space-y-1">
+                    {isYearly ? (
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs">🇮🇳</span>
+                          <span className="text-3xl font-bold">₹{PRICING.india.yearly.amount}</span>
+                          <span className="text-muted-foreground">/year</span>
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">Save 32%</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs">🌍</span>
+                          <span className="text-lg font-semibold">${PRICING.global.yearly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/year</span>
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">Save 18%</Badge>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🇮🇳</span>
+                          <span className="text-3xl font-bold">₹{PRICING.india.monthly.amount}</span>
+                          <span className="text-muted-foreground">/month</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">🌍</span>
+                          <span className="text-lg font-semibold">${PRICING.global.monthly.amount}</span>
+                          <span className="text-muted-foreground text-sm">/month</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <CardHeader>
-                    <CardTitle className="text-2xl">Pro Yearly</CardTitle>
-                    <div className="mt-4 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🇮🇳</span>
-                        <span className="text-2xl font-bold">₹{PRICING.india.yearly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/year</span>
-                        <Badge variant="outline" className="text-xs">Save {PRICING.india.yearly.save}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🌍</span>
-                        <span className="text-lg font-semibold">${PRICING.global.yearly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/year</span>
-                        <Badge variant="outline" className="text-xs">Save {PRICING.global.yearly.save}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {proFeatures.map((f) => (
-                        <li key={f.text} className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-primary shrink-0" />
-                          <span>{f.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      variant="outline"
-                      className="w-full mt-6"
-                      disabled={profile?.is_pro}
-                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
-                    >
-                      Get Best Value
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="glass relative">
-                  <CardHeader>
-                    <CardTitle className="text-2xl">Pro Monthly</CardTitle>
-                    <div className="mt-4 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🇮🇳</span>
-                        <span className="text-2xl font-bold">₹{PRICING.india.monthly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/month</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">🌍</span>
-                        <span className="text-lg font-semibold">${PRICING.global.monthly.amount}</span>
-                        <span className="text-muted-foreground text-sm">/month</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {proFeatures.map((f) => (
-                        <li key={f.text} className="flex items-center gap-3">
-                          <Check className="h-5 w-5 text-primary shrink-0" />
-                          <span>{f.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      variant="outline"
-                      className="w-full mt-6"
-                      disabled={profile?.is_pro}
-                      onClick={() => !profile?.is_pro && setShowComingSoon(true)}
-                    >
-                      Upgrade to Pro
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {proFeatures.map((f) => (
+                      <li key={f} className="flex items-center gap-3">
+                        <Check className="h-5 w-5 text-primary shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    variant="hero"
+                    className="w-full mt-6"
+                    disabled={profile?.is_pro}
+                    onClick={() => !profile?.is_pro && setShowComingSoon(true)}
+                  >
+                    {profile?.is_pro
+                      ? <><Crown className="h-4 w-4 mr-2" />Current Plan</>
+                      : isYearly ? "Get Best Value →" : "Upgrade to Pro →"}
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-3">Cancel anytime. No questions asked.</p>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
@@ -356,11 +249,7 @@ export default function PricingPage() {
               </div>
               <div className="glass rounded-xl p-6">
                 <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
-                <p className="text-muted-foreground">Yes. Cancel your subscription at any time and keep using Pro features until the end of your billing period.</p>
-              </div>
-              <div className="glass rounded-xl p-6">
-                <h3 className="font-semibold mb-2">Is my data private?</h3>
-                <p className="text-muted-foreground">Yes. We process your messages securely and don't store or share them with third parties.</p>
+                <p className="text-muted-foreground">Yes. Cancel anytime from your account. No questions asked.</p>
               </div>
             </div>
           </div>

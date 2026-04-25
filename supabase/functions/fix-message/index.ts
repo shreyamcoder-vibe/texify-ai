@@ -185,6 +185,12 @@ serve(async (req) => {
     }
 
     const systemPrompt = TONE_PROMPTS[tone];
+    // Free tones: ask for 3 distinct variations. Pro tones: 1 result (will be blurred for free users).
+    const wantVariations = !isProTone;
+    const userPrompt = wantVariations
+      ? `${message}\n\nReturn EXACTLY 3 distinct rewrites of the message above, each on its own line, separated by the literal delimiter "|||". No numbering, no labels, no extra text — just three rewrites separated by |||.`
+      : message;
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -195,7 +201,7 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message },
+          { role: "user", content: userPrompt },
         ],
       }),
     });
@@ -230,9 +236,9 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const fixedMessage = aiData.choices?.[0]?.message?.content?.trim();
+    const rawContent = aiData.choices?.[0]?.message?.content?.trim();
 
-    if (!fixedMessage) {
+    if (!rawContent) {
       // Refund
       if (!credits.is_pro) {
         await adminClient.from("user_credits")
@@ -245,12 +251,25 @@ serve(async (req) => {
       );
     }
 
+    // Parse variations for free tones, single output for pro tones
+    let variations: string[] = [];
+    if (wantVariations && rawContent.includes("|||")) {
+      variations = rawContent
+        .split("|||")
+        .map((s: string) => s.trim().replace(/^[-*\d.)\s]+/, "").trim())
+        .filter((s: string) => s.length > 0)
+        .slice(0, 3);
+    }
+    if (variations.length === 0) variations = [rawContent];
+    const fixedMessage = variations[0];
+
     // 10. Return result
     const newDailyUsed = credits.is_pro ? 0 : credits.daily_credits_used + cost;
 
     return new Response(
       JSON.stringify({
         fixedMessage,
+        variations,
         creditCost: cost,
         dailyCreditsUsed: newDailyUsed,
         dailyCreditsRemaining: credits.is_pro ? "unlimited" : Math.max(0, DAILY_CREDIT_LIMIT - newDailyUsed),

@@ -41,10 +41,14 @@ export function Navbar() {
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
-                {profile?.is_pro && (
+                {profile?.is_pro ? (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
                     <Crown className="h-4 w-4" />
                     <span>Pro</span>
+                  </div>
+                ) : (
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
+                    <span>Free Credits: {profile?.daily_credits_used ?? 0}/30 used today</span>
                   </div>
                 )}
                 <Button variant="ghost" asChild>
