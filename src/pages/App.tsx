@@ -179,7 +179,7 @@ export default function AppPage() {
           {!isPro ? (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm">
-                <span className="font-medium">Free Credits: {used}/30 used today</span>
+                <span className="font-medium">Free Credits: {used}/{DAILY_LIMIT} used today</span>
               </div>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/pricing"><Crown className="h-4 w-4 mr-1.5" />Upgrade to Pro</Link>
@@ -188,7 +188,7 @@ export default function AppPage() {
           ) : (
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
-                <Crown className="h-4 w-4" /> Pro — Unlimited fixes
+                <Crown className="h-4 w-4" /> ✨ Pro Plan — Unlimited
               </div>
             </div>
           )}
