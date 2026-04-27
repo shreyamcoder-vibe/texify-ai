@@ -236,13 +236,46 @@ export default function AppPage() {
                 <Textarea
                   placeholder="Type or paste your message here... (any language)"
                   value={inputText}
-                  onChange={e => setInputText(e.target.value.slice(0, 300))}
-                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base pr-16"
+                  onChange={e => {
+                    const next = e.target.value;
+                    // Free users hard-stop at 300; Pro soft-cap at 5000
+                    setInputText(isPro ? next.slice(0, PRO_CHAR_LIMIT) : next.slice(0, FREE_CHAR_LIMIT));
+                  }}
+                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base pr-20"
                 />
-                <span className={`absolute bottom-2 right-3 text-xs ${charCount >= 280 ? "text-destructive" : "text-muted-foreground"}`}>
-                  {charCount}/300
+                <span
+                  className={`absolute bottom-2 right-3 text-xs ${
+                    isPro
+                      ? charCount >= 4800
+                        ? "text-destructive"
+                        : charCount >= 4000
+                          ? "text-orange-500"
+                          : "text-muted-foreground"
+                      : charCount >= 280
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                  }`}
+                >
+                  {charCount}/{charLimit}
                 </span>
               </div>
+
+              {/* Cost preview (free users only) */}
+              {!isPro && charCount > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  This fix will use <span className="font-semibold text-foreground">{calcCreditCost(charCount)}</span> credit{calcCreditCost(charCount) === 1 ? "" : "s"}
+                </p>
+              )}
+
+              {/* Pro upgrade nudge for free users */}
+              {!isPro && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Pro users can fix unlimited length messages →{" "}
+                  <Link to="/pricing" className="text-primary font-medium hover:underline">
+                    Upgrade
+                  </Link>
+                </p>
+              )}
 
               {/* Output Language Dropdown */}
               <div className="mt-4">
