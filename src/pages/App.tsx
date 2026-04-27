@@ -33,10 +33,6 @@ interface FixResult {
   isProTone: boolean;
 }
 
-interface UserCredits {
-  daily_credits_used: number;
-  is_pro: boolean;
-}
 
 export default function AppPage() {
   const { user, loading: authLoading, refreshProfile } = useAuth();
