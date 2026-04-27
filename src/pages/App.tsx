@@ -10,9 +10,10 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useCredits, calcCreditCost, FREE_CHAR_LIMIT, PRO_CHAR_LIMIT, DAILY_LIMIT } from "@/hooks/useCredits";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TONES, DAILY_CREDIT_LIMIT, FREE_TONES, LANGUAGES, PRICING } from "@/lib/constants";
+import { TONES, FREE_TONES, LANGUAGES, PRICING } from "@/lib/constants";
 import {
   Sparkles, Copy, Check, Loader2, Crown, ArrowDown, RefreshCw, Lock, Clock,
 } from "lucide-react";
