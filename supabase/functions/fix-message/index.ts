@@ -64,7 +64,7 @@ serve(async (req) => {
     const userId = claimsData.claims.sub as string;
 
     // 2. Parse & validate body
-    const { message, tone } = await req.json();
+    const { message, tone, outputLanguage } = await req.json();
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return new Response(
@@ -84,6 +84,7 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const targetLanguage = typeof outputLanguage === "string" && outputLanguage.trim() ? outputLanguage.trim() : "auto";
 
     // 3. Rate limiting — 10 req/min
     const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
@@ -184,12 +185,30 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = TONE_PROMPTS[tone];
-    // Free tones: ask for 3 distinct variations. Pro tones: 1 result (will be blurred for free users).
+    const baseToneInstruction = TONE_PROMPTS[tone];
     const wantVariations = !isProTone;
-    const userPrompt = wantVariations
-      ? `${message}\n\nReturn EXACTLY 3 distinct rewrites of the message above, each on its own line, separated by the literal delimiter "|||". No numbering, no labels, no extra text — just three rewrites separated by |||.`
-      : message;
+
+    const languageInstruction = targetLanguage === "auto"
+      ? `Detect the language of the input message. The "primary" rewrite must be written in that SAME detected language.`
+      : `The "primary" rewrite must be written in ${targetLanguage}, regardless of the input language.`;
+
+    const variationsField = wantVariations
+      ? `\n  "extraVariations": [string, string]   // exactly 2 ADDITIONAL distinct rewrites in the same language as "primary"`
+      : `\n  "extraVariations": []`;
+
+    const systemPrompt = `You rewrite messages with a specific tone and produce STRICT JSON output.
+Tone instruction: ${baseToneInstruction}
+${languageInstruction}
+Always also produce an English version.
+
+Return ONLY a valid JSON object (no markdown fences, no commentary) with this exact shape:
+{
+  "detectedLanguage": string,           // human-readable name of the detected input language, e.g. "English", "Hindi", "Spanish"
+  "primaryLanguage": string,            // human-readable name of the language used in "primary"
+  "primary": string,                    // rewrite in primaryLanguage, applying the tone
+  "english": string,                    // rewrite in English, applying the tone${variationsField}
+}
+Keep all rewrites short and natural. No preamble, no explanations, no labels inside the strings.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -201,8 +220,9 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: message },
         ],
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -239,7 +259,6 @@ serve(async (req) => {
     const rawContent = aiData.choices?.[0]?.message?.content?.trim();
 
     if (!rawContent) {
-      // Refund
       if (!credits.is_pro) {
         await adminClient.from("user_credits")
           .update({ daily_credits_used: credits.daily_credits_used })
@@ -251,25 +270,37 @@ serve(async (req) => {
       );
     }
 
-    // Parse variations for free tones, single output for pro tones
-    let variations: string[] = [];
-    if (wantVariations && rawContent.includes("|||")) {
-      variations = rawContent
-        .split("|||")
-        .map((s: string) => s.trim().replace(/^[-*\d.)\s]+/, "").trim())
-        .filter((s: string) => s.length > 0)
-        .slice(0, 3);
+    // Parse JSON, with a fallback for any markdown fencing
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(rawContent);
+    } catch {
+      const cleaned = rawContent.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      try { parsed = JSON.parse(cleaned); } catch { /* ignore */ }
     }
-    if (variations.length === 0) variations = [rawContent];
-    const fixedMessage = variations[0];
 
-    // 10. Return result
+    const primary = (parsed?.primary ?? rawContent).toString().trim();
+    const english = (parsed?.english ?? primary).toString().trim();
+    const detectedLanguage = (parsed?.detectedLanguage ?? "").toString().trim() || (targetLanguage === "auto" ? "Detected" : targetLanguage);
+    const primaryLanguage = (parsed?.primaryLanguage ?? (targetLanguage === "auto" ? detectedLanguage : targetLanguage)).toString().trim();
+    const extraVariations: string[] = Array.isArray(parsed?.extraVariations)
+      ? parsed.extraVariations.map((s: any) => String(s).trim()).filter((s: string) => s.length > 0).slice(0, 2)
+      : [];
+
+    const fixedMessage = primary;
+    const variations = [primary, ...extraVariations];
+
     const newDailyUsed = credits.is_pro ? 0 : credits.daily_credits_used + cost;
 
     return new Response(
       JSON.stringify({
         fixedMessage,
+        primary,
+        english,
+        detectedLanguage,
+        primaryLanguage,
         variations,
+        extraVariations,
         creditCost: cost,
         dailyCreditsUsed: newDailyUsed,
         dailyCreditsRemaining: credits.is_pro ? "unlimited" : Math.max(0, DAILY_CREDIT_LIMIT - newDailyUsed),

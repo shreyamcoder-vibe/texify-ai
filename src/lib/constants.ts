@@ -18,33 +18,42 @@ export const TONES = [
 ] as const;
 
 export const LANGUAGES = [
-  { value: "auto", label: "Auto-detect Input Language", free: true },
-  { value: "en", label: "English", free: true },
-  { value: "hi", label: "Hindi (हिन्दी)", free: true },
-  { value: "bn", label: "Bengali (বাংলা)", free: true },
-  { value: "es", label: "Spanish (Español)", free: false },
-  { value: "fr", label: "French (Français)", free: false },
-  { value: "de", label: "German (Deutsch)", free: false },
-  { value: "it", label: "Italian (Italiano)", free: false },
-  { value: "pt", label: "Portuguese (Português)", free: false },
-  { value: "ru", label: "Russian (Русский)", free: false },
-  { value: "zh", label: "Chinese (中文)", free: false },
-  { value: "ja", label: "Japanese (日本語)", free: false },
-  { value: "ko", label: "Korean (한국어)", free: false },
-  { value: "ar", label: "Arabic (العربية)", free: false },
-  { value: "tr", label: "Turkish (Türkçe)", free: false },
-  { value: "vi", label: "Vietnamese (Tiếng Việt)", free: false },
-  { value: "th", label: "Thai (ไทย)", free: false },
-  { value: "nl", label: "Dutch (Nederlands)", free: false },
-  { value: "pl", label: "Polish (Polski)", free: false },
-  { value: "sv", label: "Swedish (Svenska)", free: false },
+  { value: "auto", label: "Auto-detect my language", flag: "🌐", name: "Auto" },
+  { value: "English", label: "English", flag: "🇬🇧", name: "English" },
+  { value: "Hindi", label: "Hindi — हिन्दी", flag: "🇮🇳", name: "Hindi" },
+  { value: "Spanish", label: "Spanish — Español", flag: "🇪🇸", name: "Spanish" },
+  { value: "French", label: "French — Français", flag: "🇫🇷", name: "French" },
+  { value: "German", label: "German — Deutsch", flag: "🇩🇪", name: "German" },
+  { value: "Portuguese", label: "Portuguese — Português", flag: "🇵🇹", name: "Portuguese" },
+  { value: "Arabic", label: "Arabic — العربية", flag: "🇸🇦", name: "Arabic" },
+  { value: "Bengali", label: "Bengali — বাংলা", flag: "🇧🇩", name: "Bengali" },
+  { value: "Russian", label: "Russian — Русский", flag: "🇷🇺", name: "Russian" },
+  { value: "Japanese", label: "Japanese — 日本語", flag: "🇯🇵", name: "Japanese" },
+  { value: "Korean", label: "Korean — 한국어", flag: "🇰🇷", name: "Korean" },
+  { value: "Chinese (Simplified)", label: "Chinese (Simplified) — 中文", flag: "🇨🇳", name: "Chinese" },
+  { value: "Italian", label: "Italian — Italiano", flag: "🇮🇹", name: "Italian" },
+  { value: "Turkish", label: "Turkish — Türkçe", flag: "🇹🇷", name: "Turkish" },
+  { value: "Dutch", label: "Dutch — Nederlands", flag: "🇳🇱", name: "Dutch" },
+  { value: "Tamil", label: "Tamil — தமிழ்", flag: "🇮🇳", name: "Tamil" },
+  { value: "Telugu", label: "Telugu — తెలుగు", flag: "🇮🇳", name: "Telugu" },
+  { value: "Marathi", label: "Marathi — मराठी", flag: "🇮🇳", name: "Marathi" },
+  { value: "Gujarati", label: "Gujarati — ગુજરાતી", flag: "🇮🇳", name: "Gujarati" },
+  { value: "Punjabi", label: "Punjabi — ਪੰਜਾਬੀ", flag: "🇮🇳", name: "Punjabi" },
+  { value: "Urdu", label: "Urdu — اردو", flag: "🇵🇰", name: "Urdu" },
+  { value: "Indonesian", label: "Indonesian — Bahasa Indonesia", flag: "🇮🇩", name: "Indonesian" },
+  { value: "Malay", label: "Malay — Bahasa Melayu", flag: "🇲🇾", name: "Malay" },
+  { value: "Vietnamese", label: "Vietnamese — Tiếng Việt", flag: "🇻🇳", name: "Vietnamese" },
+  { value: "Thai", label: "Thai — ภาษาไทย", flag: "🇹🇭", name: "Thai" },
+  { value: "Polish", label: "Polish — Polski", flag: "🇵🇱", name: "Polish" },
+  { value: "Swedish", label: "Swedish — Svenska", flag: "🇸🇪", name: "Swedish" },
+  { value: "Norwegian", label: "Norwegian — Norsk", flag: "🇳🇴", name: "Norwegian" },
+  { value: "Danish", label: "Danish — Dansk", flag: "🇩🇰", name: "Danish" },
 ] as const;
 
 export const DAILY_CREDIT_LIMIT = 30;
 export const FREE_DAILY_LIMIT = DAILY_CREDIT_LIMIT;
 
 export const FREE_TONES: string[] = TONES.filter(t => t.free).map(t => t.value);
-export const FREE_LANGUAGES: string[] = LANGUAGES.filter(l => l.free).map(l => l.value);
 
 export const PRICING = {
   india: { monthly: { amount: 49, currency: "₹" }, yearly: { amount: 399, currency: "₹", save: "32%" } },

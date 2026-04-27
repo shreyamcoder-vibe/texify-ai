@@ -32,7 +32,7 @@ export function Navbar() {
             <span className="text-xl font-bold gradient-text">Texify AI</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
               <Link to="/pricing">Pricing</Link>
             </Button>
