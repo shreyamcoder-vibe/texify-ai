@@ -113,11 +113,11 @@ export default function AppPage() {
       }
 
       if (data.dailyCreditsUsed !== undefined) {
-        setCredits(prev => prev ? {
-          ...prev,
-          daily_credits_used: data.dailyCreditsUsed,
-        } : prev);
+        setUsed(data.dailyCreditsUsed);
         refreshProfile();
+      } else {
+        // Fallback: re-fetch from source of truth
+        refreshCredits();
       }
     } catch (err) {
       console.error("Fix error:", err);
