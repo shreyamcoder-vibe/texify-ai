@@ -54,7 +54,6 @@ export const DAILY_CREDIT_LIMIT = 30;
 export const FREE_DAILY_LIMIT = DAILY_CREDIT_LIMIT;
 
 export const FREE_TONES: string[] = TONES.filter(t => t.free).map(t => t.value);
-export const FREE_LANGUAGES: string[] = LANGUAGES.filter(l => l.free).map(l => l.value);
 
 export const PRICING = {
   india: { monthly: { amount: 49, currency: "₹" }, yearly: { amount: 399, currency: "₹", save: "32%" } },
