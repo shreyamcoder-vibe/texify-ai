@@ -86,7 +86,7 @@ export default function AppPage() {
     try {
       const { data, error } = await supabase.functions.invoke("fix-message", {
         body: {
-          message: inputText.slice(0, 300),
+          message: inputText.slice(0, charLimit),
           tone: selectedTone,
           outputLanguage,
         },
