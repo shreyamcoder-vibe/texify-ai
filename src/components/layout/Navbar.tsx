@@ -44,14 +44,14 @@ export function Navbar() {
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
-                {profile?.is_pro ? (
+                {isPro ? (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
                     <Crown className="h-4 w-4" />
-                    <span>Pro</span>
+                    <span>✨ Pro Plan — Unlimited</span>
                   </div>
                 ) : (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
-                    <span>Credits Left: {Math.max(0, 30 - (profile?.daily_credits_used ?? 0))}/30</span>
+                    <span>Credits Left: {Math.max(0, DAILY_LIMIT - creditsUsed)}/{DAILY_LIMIT}</span>
                   </div>
                 )}
                 <Button variant="ghost" asChild>
