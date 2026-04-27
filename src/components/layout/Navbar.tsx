@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useCredits, DAILY_LIMIT } from "@/hooks/useCredits";
 import { Sparkles, LogOut, User, Crown } from "lucide-react";
 import {
   DropdownMenu,
@@ -13,7 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Navbar() {
   const { user, profile, signOut, loading } = useAuth();
+  const { isPro: creditsIsPro, used: creditsUsed } = useCredits();
   const navigate = useNavigate();
+  const isPro = creditsIsPro || profile?.is_pro;
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,14 +44,14 @@ export function Navbar() {
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
-                {profile?.is_pro ? (
+                {isPro ? (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
                     <Crown className="h-4 w-4" />
-                    <span>Pro</span>
+                    <span>✨ Pro Plan — Unlimited</span>
                   </div>
                 ) : (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
-                    <span>Credits Left: {Math.max(0, 30 - (profile?.daily_credits_used ?? 0))}/30</span>
+                    <span>Credits Left: {Math.max(0, DAILY_LIMIT - creditsUsed)}/{DAILY_LIMIT}</span>
                   </div>
                 )}
                 <Button variant="ghost" asChild>
@@ -71,7 +74,7 @@ export function Navbar() {
                       <p className="text-xs text-muted-foreground">{profile?.email}</p>
                     </div>
                     <DropdownMenuSeparator />
-                    {!profile?.is_pro && (
+                    {!isPro && (
                       <DropdownMenuItem asChild>
                         <Link to="/pricing" className="flex items-center gap-2 cursor-pointer">
                           <Crown className="h-4 w-4 text-primary" />

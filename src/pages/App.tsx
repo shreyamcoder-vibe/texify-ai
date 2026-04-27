@@ -10,9 +10,10 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useCredits, calcCreditCost, FREE_CHAR_LIMIT, PRO_CHAR_LIMIT, DAILY_LIMIT } from "@/hooks/useCredits";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TONES, DAILY_CREDIT_LIMIT, FREE_TONES, LANGUAGES, PRICING } from "@/lib/constants";
+import { TONES, FREE_TONES, LANGUAGES, PRICING } from "@/lib/constants";
 import {
   Sparkles, Copy, Check, Loader2, Crown, ArrowDown, RefreshCw, Lock, Clock,
 } from "lucide-react";
@@ -32,13 +33,10 @@ interface FixResult {
   isProTone: boolean;
 }
 
-interface UserCredits {
-  daily_credits_used: number;
-  is_pro: boolean;
-}
 
 export default function AppPage() {
   const { user, loading: authLoading, refreshProfile } = useAuth();
+  const { isPro, used, setUsed, refresh: refreshCredits } = useCredits();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -52,25 +50,13 @@ export default function AppPage() {
   const [showBlurUpgrade, setShowBlurUpgrade] = useState(false);
   const [blurredToneName, setBlurredToneName] = useState("");
   const [cooldown, setCooldown] = useState(0);
-  const [credits, setCredits] = useState<UserCredits | null>(null);
 
-  const isPro = credits?.is_pro ?? false;
-  const used = credits?.daily_credits_used ?? 0;
-  const dailyRemaining = isPro ? "∞" : Math.max(0, DAILY_CREDIT_LIMIT - used);
-
+  const dailyRemaining = isPro ? "∞" : Math.max(0, DAILY_LIMIT - used);
+  const charLimit = isPro ? PRO_CHAR_LIMIT : FREE_CHAR_LIMIT;
   const isProTone = (tone: string) => !FREE_TONES.includes(tone);
 
-  const fetchCredits = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("user_credits" as any)
-      .select("daily_credits_used, is_pro")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) setCredits(data as unknown as UserCredits);
-  }, [user]);
-
-  useEffect(() => { fetchCredits(); }, [fetchCredits]);
+  // Refresh credits whenever the page mounts (single source of truth)
+  useEffect(() => { refreshCredits(); }, [refreshCredits]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -96,7 +82,7 @@ export default function AppPage() {
     try {
       const { data, error } = await supabase.functions.invoke("fix-message", {
         body: {
-          message: inputText.slice(0, 300),
+          message: inputText.slice(0, charLimit),
           tone: selectedTone,
           outputLanguage,
         },
@@ -123,11 +109,11 @@ export default function AppPage() {
       }
 
       if (data.dailyCreditsUsed !== undefined) {
-        setCredits(prev => prev ? {
-          ...prev,
-          daily_credits_used: data.dailyCreditsUsed,
-        } : prev);
+        setUsed(data.dailyCreditsUsed);
         refreshProfile();
+      } else {
+        // Fallback: re-fetch from source of truth
+        refreshCredits();
       }
     } catch (err) {
       console.error("Fix error:", err);
@@ -193,7 +179,7 @@ export default function AppPage() {
           {!isPro ? (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm">
-                <span className="font-medium">Free Credits: {used}/30 used today</span>
+                <span className="font-medium">Free Credits: {used}/{DAILY_LIMIT} used today</span>
               </div>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/pricing"><Crown className="h-4 w-4 mr-1.5" />Upgrade to Pro</Link>
@@ -202,7 +188,7 @@ export default function AppPage() {
           ) : (
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
-                <Crown className="h-4 w-4" /> Pro — Unlimited fixes
+                <Crown className="h-4 w-4" /> ✨ Pro Plan — Unlimited
               </div>
             </div>
           )}
@@ -250,13 +236,46 @@ export default function AppPage() {
                 <Textarea
                   placeholder="Type or paste your message here... (any language)"
                   value={inputText}
-                  onChange={e => setInputText(e.target.value.slice(0, 300))}
-                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base pr-16"
+                  onChange={e => {
+                    const next = e.target.value;
+                    // Free users hard-stop at 300; Pro soft-cap at 5000
+                    setInputText(isPro ? next.slice(0, PRO_CHAR_LIMIT) : next.slice(0, FREE_CHAR_LIMIT));
+                  }}
+                  className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 text-base pr-20"
                 />
-                <span className={`absolute bottom-2 right-3 text-xs ${charCount >= 280 ? "text-destructive" : "text-muted-foreground"}`}>
-                  {charCount}/300
+                <span
+                  className={`absolute bottom-2 right-3 text-xs ${
+                    isPro
+                      ? charCount >= 4800
+                        ? "text-destructive"
+                        : charCount >= 4000
+                          ? "text-orange-500"
+                          : "text-muted-foreground"
+                      : charCount >= 280
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                  }`}
+                >
+                  {charCount}/{charLimit}
                 </span>
               </div>
+
+              {/* Cost preview (free users only) */}
+              {!isPro && charCount > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  This fix will use <span className="font-semibold text-foreground">{calcCreditCost(charCount)}</span> credit{calcCreditCost(charCount) === 1 ? "" : "s"}
+                </p>
+              )}
+
+              {/* Pro upgrade nudge for free users */}
+              {!isPro && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Pro users can fix unlimited length messages →{" "}
+                  <Link to="/pricing" className="text-primary font-medium hover:underline">
+                    Upgrade
+                  </Link>
+                </p>
+              )}
 
               {/* Output Language Dropdown */}
               <div className="mt-4">
