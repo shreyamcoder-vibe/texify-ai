@@ -74,12 +74,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (message.length > 300) {
-      return new Response(
-        JSON.stringify({ error: "Message must be 300 characters or less." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
     if (!tone || !TONE_PROMPTS[tone]) {
       return new Response(
         JSON.stringify({ error: "Invalid tone." }),
@@ -130,21 +124,44 @@ serve(async (req) => {
 
     const now = new Date();
 
-    // 5. Daily reset check
-    const dailyReset = new Date(credits.daily_reset_timestamp);
-    const hoursSinceReset = (now.getTime() - dailyReset.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceReset >= 24) {
+    // 5. DAILY RESET CHECK — runs BEFORE any credit deduction.
+    // - Null/missing daily_reset_timestamp → treat as needs-reset.
+    // - >= 24h since last reset → reset to 0 and stamp now.
+    const rawReset = credits.daily_reset_timestamp;
+    const dailyReset = rawReset ? new Date(rawReset) : null;
+    const hoursSinceReset = dailyReset
+      ? (now.getTime() - dailyReset.getTime()) / (1000 * 60 * 60)
+      : Infinity;
+    const needsReset = !dailyReset || isNaN(dailyReset.getTime()) || hoursSinceReset >= 24;
+
+    console.log(
+      `[fix-message] reset-check user=${userId} reset_ts=${rawReset} hours_since=${
+        Number.isFinite(hoursSinceReset) ? hoursSinceReset.toFixed(2) : "n/a"
+      } needsReset=${needsReset} usedBefore=${credits.daily_credits_used}`
+    );
+
+    if (needsReset) {
       credits.daily_credits_used = 0;
       credits.daily_reset_timestamp = now.toISOString();
       await adminClient.from("user_credits")
         .update({ daily_credits_used: 0, daily_reset_timestamp: now.toISOString() })
         .eq("user_id", userId);
+      console.log(`[fix-message] reset-applied user=${userId} new_reset_ts=${credits.daily_reset_timestamp}`);
+    }
+
+    // Char-limit: free users 300, pro users 5000
+    const maxChars = credits.is_pro ? PRO_CHAR_LIMIT : FREE_CHAR_LIMIT;
+    if (message.length > maxChars) {
+      return new Response(
+        JSON.stringify({ error: `Message must be ${maxChars} characters or less.` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const cost = getCreditCost(message.length);
     const isProTone = !FREE_TONES.includes(tone);
 
-    // 6. Credit checks (skip for Pro users)
+    // 6. Credit checks (skip entirely for Pro users)
     if (!credits.is_pro) {
       if (credits.daily_credits_used + cost > DAILY_CREDIT_LIMIT) {
         return new Response(
