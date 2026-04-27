@@ -25,11 +25,13 @@ const TONE_PROMPTS: Record<string, string> = {
 
 const FREE_TONES = ["polite", "professional", "friendly"];
 const DAILY_CREDIT_LIMIT = 30;
+const FREE_CHAR_LIMIT = 300;
+const PRO_CHAR_LIMIT = 5000;
 
+// 1 credit per 100 chars (rounded up): 1-100→1, 101-200→2, ... 401-500→5
 function getCreditCost(messageLength: number): number {
-  if (messageLength <= 100) return 1;
-  if (messageLength <= 200) return 2;
-  return 3;
+  if (messageLength <= 0) return 0;
+  return Math.ceil(messageLength / 100);
 }
 
 serve(async (req) => {
