@@ -40,6 +40,7 @@ interface UserCredits {
 
 export default function AppPage() {
   const { user, loading: authLoading, refreshProfile } = useAuth();
+  const { isPro, used, setUsed, refresh: refreshCredits } = useCredits();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -53,25 +54,13 @@ export default function AppPage() {
   const [showBlurUpgrade, setShowBlurUpgrade] = useState(false);
   const [blurredToneName, setBlurredToneName] = useState("");
   const [cooldown, setCooldown] = useState(0);
-  const [credits, setCredits] = useState<UserCredits | null>(null);
 
-  const isPro = credits?.is_pro ?? false;
-  const used = credits?.daily_credits_used ?? 0;
-  const dailyRemaining = isPro ? "∞" : Math.max(0, DAILY_CREDIT_LIMIT - used);
-
+  const dailyRemaining = isPro ? "∞" : Math.max(0, DAILY_LIMIT - used);
+  const charLimit = isPro ? PRO_CHAR_LIMIT : FREE_CHAR_LIMIT;
   const isProTone = (tone: string) => !FREE_TONES.includes(tone);
 
-  const fetchCredits = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("user_credits" as any)
-      .select("daily_credits_used, is_pro")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) setCredits(data as unknown as UserCredits);
-  }, [user]);
-
-  useEffect(() => { fetchCredits(); }, [fetchCredits]);
+  // Refresh credits whenever the page mounts (single source of truth)
+  useEffect(() => { refreshCredits(); }, [refreshCredits]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
