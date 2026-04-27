@@ -74,7 +74,7 @@ export function Navbar() {
                       <p className="text-xs text-muted-foreground">{profile?.email}</p>
                     </div>
                     <DropdownMenuSeparator />
-                    {!profile?.is_pro && (
+                    {!isPro && (
                       <DropdownMenuItem asChild>
                         <Link to="/pricing" className="flex items-center gap-2 cursor-pointer">
                           <Crown className="h-4 w-4 text-primary" />
