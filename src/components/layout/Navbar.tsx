@@ -14,7 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Navbar() {
   const { user, profile, signOut, loading } = useAuth();
+  const { isPro: creditsIsPro, used: creditsUsed } = useCredits();
   const navigate = useNavigate();
+  const isPro = creditsIsPro || profile?.is_pro;
 
   const handleSignOut = async () => {
     await signOut();
