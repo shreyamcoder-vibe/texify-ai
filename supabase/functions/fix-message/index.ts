@@ -64,7 +64,7 @@ serve(async (req) => {
     const userId = claimsData.claims.sub as string;
 
     // 2. Parse & validate body
-    const { message, tone } = await req.json();
+    const { message, tone, outputLanguage } = await req.json();
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return new Response(
@@ -84,6 +84,7 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const targetLanguage = typeof outputLanguage === "string" && outputLanguage.trim() ? outputLanguage.trim() : "auto";
 
     // 3. Rate limiting — 10 req/min
     const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
