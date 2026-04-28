@@ -1,27 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { useCredits, DAILY_LIMIT } from "@/hooks/useCredits";
-import { Sparkles, LogOut, User, Crown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sparkles, Crown } from "lucide-react";
 
 export function Navbar() {
-  const { user, profile, signOut, loading } = useAuth();
-  const { isPro: creditsIsPro, used: creditsUsed } = useCredits();
-  const navigate = useNavigate();
-  const isPro = creditsIsPro || profile?.is_pro;
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-  };
+  const { isPro, used } = useCredits();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -40,65 +23,20 @@ export function Navbar() {
               <Link to="/pricing">Pricing</Link>
             </Button>
 
-            {loading ? (
-              <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
-              <div className="flex items-center gap-3">
-                {isPro ? (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
-                    <Crown className="h-4 w-4" />
-                    <span>✨ Pro Plan — Unlimited</span>
-                  </div>
-                ) : (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
-                    <span>Credits Left: {Math.max(0, DAILY_LIMIT - creditsUsed)}/{DAILY_LIMIT}</span>
-                  </div>
-                )}
-                <Button variant="ghost" asChild>
-                  <Link to="/app">App</Link>
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                        <AvatarImage src={profile?.avatar_url ?? undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {profile?.full_name?.[0] ?? profile?.email?.[0]?.toUpperCase() ?? <User className="h-4 w-4" />}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 glass">
-                    <div className="px-3 py-2">
-                      <p className="text-sm font-medium">{profile?.full_name ?? "User"}</p>
-                      <p className="text-xs text-muted-foreground">{profile?.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    {!isPro && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/pricing" className="flex items-center gap-2 cursor-pointer">
-                          <Crown className="h-4 w-4 text-primary" />
-                          <span>Upgrade to Pro</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            {isPro ? (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full gradient-primary text-primary-foreground text-sm font-medium">
+                <Crown className="h-4 w-4" />
+                <span>✨ Pro Plan — Unlimited</span>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" asChild>
-                  <Link to="/auth">Login</Link>
-                </Button>
-                <Button variant="hero" asChild>
-                  <Link to="/auth?mode=signup">Sign Up Free</Link>
-                </Button>
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass text-xs font-medium">
+                <span>Credits Left: {Math.max(0, DAILY_LIMIT - used)}/{DAILY_LIMIT}</span>
               </div>
             )}
+
+            <Button variant="ghost" asChild>
+              <Link to="/app">App</Link>
+            </Button>
           </div>
         </div>
       </div>
