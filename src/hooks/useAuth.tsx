@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+// Guest-mode auth shim. All visitors are treated as a logged-in guest user.
+// No Supabase session is required. Login/Signup flows are bypassed for demo.
 
-interface Profile {
+interface GuestProfile {
   id: string;
   user_id: string;
   email: string | null;
@@ -13,109 +12,35 @@ interface Profile {
   credits_reset_at: string;
 }
 
+const GUEST_USER = {
+  id: "guest_user",
+  email: "guest@texify.app",
+  user_metadata: { full_name: "Guest" },
+} as any;
+
+const GUEST_PROFILE: GuestProfile = {
+  id: "guest_user",
+  user_id: "guest_user",
+  email: "guest@texify.app",
+  full_name: "Guest",
+  avatar_url: null,
+  is_pro: false,
+  daily_credits_used: 0,
+  credits_reset_at: new Date().toISOString(),
+};
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer profile fetch
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (!error && data) {
-      setProfile(data as Profile);
-    }
-  };
-
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    return { error };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
-  };
-
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/app`,
-      },
-    });
-    return { error };
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-  };
-
-  const refreshProfile = () => {
-    if (user) {
-      fetchProfile(user.id);
-    }
-  };
-
+  const noop = async () => ({ error: null as any });
   return {
-    user,
-    session,
-    profile,
-    loading,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
-    refreshProfile,
+    user: GUEST_USER,
+    session: null,
+    profile: GUEST_PROFILE,
+    loading: false,
+    signUp: noop,
+    signIn: noop,
+    signInWithGoogle: noop,
+    signOut: noop,
+    refreshProfile: () => {},
+    isGuest: true,
   };
 }
