@@ -20,9 +20,6 @@ export function Footer() {
             <Link to="/app" className="hover:text-foreground transition-colors">
               App
             </Link>
-            <Link to="/auth" className="hover:text-foreground transition-colors">
-              Login
-            </Link>
           </div>
           
           {/* Copyright */}

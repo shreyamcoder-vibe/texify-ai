@@ -35,7 +35,8 @@ interface FixResult {
 
 
 export default function AppPage() {
-  const { user, loading: authLoading, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const authLoading = false;
   const { isPro, used, setUsed, refresh: refreshCredits } = useCredits();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,16 +65,18 @@ export default function AppPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/auth");
-  }, [authLoading, user, navigate]);
-
   const handleFix = async () => {
     if (!inputText.trim()) {
       toast({ variant: "destructive", title: "Empty message", description: "Please enter a message to fix." });
       return;
     }
-    if (!user) { navigate("/auth"); return; }
+
+    // Guest-mode: enforce daily credit limit client-side.
+    const cost = calcCreditCost(inputText.slice(0, charLimit).length);
+    if (!isPro && used + cost > DAILY_LIMIT) {
+      setShowLimitReached(true);
+      return;
+    }
 
     setIsLoading(true);
     setResult(null);
@@ -108,12 +111,9 @@ export default function AppPage() {
         setShowBlurUpgrade(true);
       }
 
-      if (data.dailyCreditsUsed !== undefined) {
-        setUsed(data.dailyCreditsUsed);
-        refreshProfile();
-      } else {
-        // Fallback: re-fetch from source of truth
-        refreshCredits();
+      // Guest-mode: deduct credits locally
+      if (!isPro) {
+        setUsed(used + cost);
       }
     } catch (err) {
       console.error("Fix error:", err);
@@ -139,14 +139,6 @@ export default function AppPage() {
     [outputLanguage]
   );
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center gradient-subtle">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  if (!user) return null;
 
   const charCount = inputText.length;
   const isOutputBlurred = showBlurUpgrade && result?.isProTone && !isPro;
