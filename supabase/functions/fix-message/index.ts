@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,15 +23,7 @@ const TONE_PROMPTS: Record<string, string> = {
 };
 
 const FREE_TONES = ["polite", "professional", "friendly"];
-const DAILY_CREDIT_LIMIT = 30;
-const FREE_CHAR_LIMIT = 300;
 const PRO_CHAR_LIMIT = 5000;
-
-// 1 credit per 100 chars (rounded up): 1-100→1, 101-200→2, ... 401-500→5
-function getCreditCost(messageLength: number): number {
-  if (messageLength <= 0) return 0;
-  return Math.ceil(messageLength / 100);
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,32 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Verify JWT
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    const userId = claimsData.claims.sub as string;
-
-    // 2. Parse & validate body
+    // Guest-mode: no JWT verification. Open endpoint for demo.
     const { message, tone, outputLanguage } = await req.json();
 
     if (!message || typeof message !== "string" || !message.trim()) {
@@ -80,124 +46,18 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const targetLanguage = typeof outputLanguage === "string" && outputLanguage.trim() ? outputLanguage.trim() : "auto";
-
-    // 3. Rate limiting — 10 req/min
-    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-    const { count: recentCount } = await supabaseClient
-      .from("requests_log")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", oneMinuteAgo);
-
-    if ((recentCount ?? 0) >= 10) {
+    if (message.length > PRO_CHAR_LIMIT) {
       return new Response(
-        JSON.stringify({ error: "Too many requests. Please slow down." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Use service role for credit operations
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // 4. Fetch user credits
-    let { data: credits } = await adminClient
-      .from("user_credits")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (!credits) {
-      await adminClient.from("user_credits").insert({ user_id: userId });
-      credits = {
-        user_id: userId,
-        daily_credits_used: 0,
-        daily_reset_timestamp: new Date().toISOString(),
-        monthly_bonus_used: 0,
-        monthly_reset_timestamp: new Date().toISOString(),
-        is_pro: false,
-      };
-    }
-
-    const now = new Date();
-
-    // 5. DAILY RESET CHECK — runs BEFORE any credit deduction.
-    // - Null/missing daily_reset_timestamp → treat as needs-reset.
-    // - >= 24h since last reset → reset to 0 and stamp now.
-    const rawReset = credits.daily_reset_timestamp;
-    const dailyReset = rawReset ? new Date(rawReset) : null;
-    const hoursSinceReset = dailyReset
-      ? (now.getTime() - dailyReset.getTime()) / (1000 * 60 * 60)
-      : Infinity;
-    const needsReset = !dailyReset || isNaN(dailyReset.getTime()) || hoursSinceReset >= 24;
-
-    console.log(
-      `[fix-message] reset-check user=${userId} reset_ts=${rawReset} hours_since=${
-        Number.isFinite(hoursSinceReset) ? hoursSinceReset.toFixed(2) : "n/a"
-      } needsReset=${needsReset} usedBefore=${credits.daily_credits_used}`
-    );
-
-    if (needsReset) {
-      credits.daily_credits_used = 0;
-      credits.daily_reset_timestamp = now.toISOString();
-      await adminClient.from("user_credits")
-        .update({ daily_credits_used: 0, daily_reset_timestamp: now.toISOString() })
-        .eq("user_id", userId);
-      console.log(`[fix-message] reset-applied user=${userId} new_reset_ts=${credits.daily_reset_timestamp}`);
-    }
-
-    // Char-limit: free users 300, pro users 5000
-    const maxChars = credits.is_pro ? PRO_CHAR_LIMIT : FREE_CHAR_LIMIT;
-    if (message.length > maxChars) {
-      return new Response(
-        JSON.stringify({ error: `Message must be ${maxChars} characters or less.` }),
+        JSON.stringify({ error: `Message must be ${PRO_CHAR_LIMIT} characters or less.` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const cost = getCreditCost(message.length);
+    const targetLanguage = typeof outputLanguage === "string" && outputLanguage.trim() ? outputLanguage.trim() : "auto";
     const isProTone = !FREE_TONES.includes(tone);
 
-    // 6. Credit checks (skip entirely for Pro users)
-    if (!credits.is_pro) {
-      if (credits.daily_credits_used + cost > DAILY_CREDIT_LIMIT) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Daily credits exhausted. Upgrade to Pro.",
-            requiresUpgrade: true,
-            type: "daily_limit"
-          }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    // 7. Deduct credits BEFORE calling AI
-    if (!credits.is_pro) {
-      await adminClient.from("user_credits")
-        .update({ daily_credits_used: credits.daily_credits_used + cost })
-        .eq("user_id", userId);
-    }
-
-    // 8. Log request
-    await adminClient.from("requests_log").insert({
-      user_id: userId,
-      tone,
-      input_length: message.length,
-    });
-
-    // 9. Call Lovable AI Gateway
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      // Refund credits
-      if (!credits.is_pro) {
-        await adminClient.from("user_credits")
-          .update({ daily_credits_used: credits.daily_credits_used })
-          .eq("user_id", userId);
-      }
       return new Response(
         JSON.stringify({ error: "AI service not configured." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -222,10 +82,10 @@ Always also produce an English version.
 
 Return ONLY a valid JSON object (no markdown fences, no commentary) with this exact shape:
 {
-  "detectedLanguage": string,           // human-readable name of the detected input language, e.g. "English", "Hindi", "Spanish"
-  "primaryLanguage": string,            // human-readable name of the language used in "primary"
-  "primary": string,                    // rewrite in primaryLanguage, applying the tone
-  "english": string,                    // rewrite in English, applying the tone${variationsField}
+  "detectedLanguage": string,
+  "primaryLanguage": string,
+  "primary": string,
+  "english": string,${variationsField}
 }
 Keep all rewrites short and natural. No preamble, no explanations, no labels inside the strings.`;
 
@@ -246,13 +106,6 @@ Keep all rewrites short and natural. No preamble, no explanations, no labels ins
     });
 
     if (!aiResponse.ok) {
-      // Refund credits on AI failure
-      if (!credits.is_pro) {
-        await adminClient.from("user_credits")
-          .update({ daily_credits_used: credits.daily_credits_used })
-          .eq("user_id", userId);
-      }
-
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -265,7 +118,6 @@ Keep all rewrites short and natural. No preamble, no explanations, no labels ins
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
       const errorText = await aiResponse.text();
       console.error("AI error:", aiResponse.status, errorText);
       return new Response(
@@ -276,20 +128,13 @@ Keep all rewrites short and natural. No preamble, no explanations, no labels ins
 
     const aiData = await aiResponse.json();
     const rawContent = aiData.choices?.[0]?.message?.content?.trim();
-
     if (!rawContent) {
-      if (!credits.is_pro) {
-        await adminClient.from("user_credits")
-          .update({ daily_credits_used: credits.daily_credits_used })
-          .eq("user_id", userId);
-      }
       return new Response(
         JSON.stringify({ error: "No response from AI." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Parse JSON, with a fallback for any markdown fencing
     let parsed: any = null;
     try {
       parsed = JSON.parse(rawContent);
@@ -306,24 +151,17 @@ Keep all rewrites short and natural. No preamble, no explanations, no labels ins
       ? parsed.extraVariations.map((s: any) => String(s).trim()).filter((s: string) => s.length > 0).slice(0, 2)
       : [];
 
-    const fixedMessage = primary;
-    const variations = [primary, ...extraVariations];
-
-    const newDailyUsed = credits.is_pro ? 0 : credits.daily_credits_used + cost;
-
     return new Response(
       JSON.stringify({
-        fixedMessage,
+        fixedMessage: primary,
         primary,
         english,
         detectedLanguage,
         primaryLanguage,
-        variations,
+        variations: [primary, ...extraVariations],
         extraVariations,
-        creditCost: cost,
-        dailyCreditsUsed: newDailyUsed,
-        dailyCreditsRemaining: credits.is_pro ? "unlimited" : Math.max(0, DAILY_CREDIT_LIMIT - newDailyUsed),
-        isPro: credits.is_pro,
+        creditCost: 0,
+        isPro: false,
         isProTone,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
